@@ -4,6 +4,7 @@
 #include <D3D11.h>
 #include <DxErr.h>
 #include <xnamath.h>
+#include "World.h"
 
 
 #if defined(DEBUG) | defined(_DEBUG)
@@ -40,25 +41,33 @@
 // Utility classes.
 //---------------------------------------------------------------------------------------
 
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
+#include <glm/gtc/constants.hpp> // glm::pi
+#include <glm/gtc/quaternion.hpp>
+
 namespace Colors
 {
-	XMGLOBALCONST XMVECTORF32 White = { 1.0f, 1.0f, 1.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Black = { 0.0f, 0.0f, 0.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
+	extern glm::vec4 White;
+	extern glm::vec4 Black;
+	extern glm::vec4 Red;
+	extern glm::vec4 Green;
+	extern glm::vec4 Blue;
+	extern glm::vec4 Yellow;
+	extern glm::vec4 Cyan;
+	extern glm::vec4 Magenta;
 
-	XMGLOBALCONST XMVECTORF32 Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
-	XMGLOBALCONST XMVECTORF32 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
+	extern glm::vec4 Silver;
+	extern glm::vec4 LightSteelBlue;
 }
 
 class GraphSystem
 {
 public:
-	GraphSystem();
+	GraphSystem(World *InWorld);
 	~GraphSystem();
 
 	bool InitDirect3D(HWND InhWnd,int InClientWidth,int InClientHeight);
@@ -69,6 +78,8 @@ public:
 	void BeginRender();
 
 	void WaitforFinishRender();
+
+	ID3D11Device* GetD3dDevice() { return md3dDevice; }
 
 private:
 	static void WINAPI OnRenderThreadProc(void * InGraphSystem);
@@ -95,6 +106,7 @@ private:
 	HANDLE hEventBeginRender;
 	HANDLE hEventFinishRender;
 
+	World *mWorld;
 };
 
 #endif

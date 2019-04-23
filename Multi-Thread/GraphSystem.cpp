@@ -4,9 +4,21 @@
 
 int (WINAPIV * __vsnwprintf)(wchar_t *, size_t, const wchar_t*, va_list) = _vsnwprintf;
 
+glm::vec4 Colors::White = { 1.0f, 1.0f, 1.0f, 1.0f };
+glm::vec4 Colors::Black = { 0.0f, 0.0f, 0.0f, 1.0f };
+glm::vec4 Colors::Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+glm::vec4 Colors::Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+glm::vec4 Colors::Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+glm::vec4 Colors::Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
+glm::vec4 Colors::Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
+glm::vec4 Colors::Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 
-GraphSystem::GraphSystem()
+glm::vec4 Colors::Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
+glm::vec4 Colors::LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
+
+GraphSystem::GraphSystem(World *InWorld)
 	:
+	mWorld(InWorld),
 	md3dDriverType(D3D_DRIVER_TYPE_HARDWARE),
 	mClientWidth(800),
 	mClientHeight(600),
@@ -249,6 +261,7 @@ void GraphSystem::OnRender()
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+	mWorld->OnRender(md3dImmediateContext);
 
 	HR(mSwapChain->Present(0, 0));
 
