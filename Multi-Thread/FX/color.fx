@@ -12,9 +12,16 @@ RasterizerState WireframeRS
     AntialiasedLineEnable = true;
 };
 
-cbuffer cbPerObject
+
+cbuffer cbPerFrame: register(b0)
 {
-	float4x4 gWorldViewProj; 
+	float4x4 viewMat;
+	float4x4 projMat;
+};
+
+cbuffer cbPerObject: register(b1)
+{
+	float4x4 modelMat;
 };
 
 struct VertexIn
@@ -34,7 +41,8 @@ VertexOut VS(VertexIn vin)
 	VertexOut vout;
 	
 	// Transform to homogeneous clip space.
-	vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
+	float4x4 mvp = mul(mul(modelMat,viewMat),projMat);
+	vout.PosH = mul(float4(vin.PosL, 1.0f), mvp);
 	
 	// Just pass vertex color into the pixel shader.
     vout.Color = vin.Color;

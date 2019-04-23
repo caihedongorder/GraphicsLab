@@ -67,7 +67,7 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
-void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
+void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
 {
 	float mPhi = glm::radians(180.0f) * 0.25f;
 	float mTheta = glm::radians(180.0f) * 1.5f;
@@ -85,15 +85,10 @@ void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
 
 	auto perpMat = glm::perspectiveLH(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 1000.0f);
 
-	auto pViewMat = glm::value_ptr(viewMat);
-	auto pPerpMat = glm::value_ptr(perpMat);
-
 	auto mvp = perpMat * viewMat;
-	auto pMvp = glm::value_ptr(mvp);
 
-	auto WorldViewProj = Effect->GetVariableByName("gWorldViewProj")->AsMatrix();
-	
-	WorldViewProj->SetMatrix(glm::value_ptr(mvp));
+	auto WorldViewProj = Effect->GetVariableByName("modelMat")->AsMatrix();
+	WorldViewProj->SetMatrix(glm::value_ptr(local2WorldMat));
 
 	InD3dDeviceContext->IASetInputLayout(mInputLayout);
 	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -103,11 +98,16 @@ void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
 	InD3dDeviceContext->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
 	InD3dDeviceContext->IASetIndexBuffer(mIB, DXGI_FORMAT_R32_UINT, 0);
 
+
 	D3DX11_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
+
+	
 	for (UINT p = 0; p < techDesc.Passes; ++p)
 	{
 		mTech->GetPassByIndex(p)->Apply(0, InD3dDeviceContext);
+
+		InD3dDeviceContext->VSSetConstantBuffers(0, 1, &InPerFrameConstBuff);
 
 		// 36 indices for the box.
 		InD3dDeviceContext->DrawIndexed(36, 0, 0);
