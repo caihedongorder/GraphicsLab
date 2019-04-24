@@ -48,42 +48,76 @@ void World::Init(ID3D11Device* Ind3dDevice)
 void World::CreateBox(ID3D11Device* Ind3dDevice, const Transform& InLocal2WorldTransform)
 {
 	auto pBoxMesh = std::shared_ptr<StaticMeshRenderData>(new StaticMeshRenderData(InLocal2WorldTransform));
+
 	StaticMeshRenderData::FVectex vertices[] =
 	{
-		{ glm::vec3(-1.0f, -1.0f, -1.0f), Colors::White   },
-		{ glm::vec3(-1.0f, +1.0f, -1.0f), Colors::Black   },
-		{ glm::vec3(+1.0f, +1.0f, -1.0f), Colors::Red     },
-		{ glm::vec3(+1.0f, -1.0f, -1.0f), Colors::Green   },
-		{ glm::vec3(-1.0f, -1.0f, +1.0f), Colors::Blue    },
-		{ glm::vec3(-1.0f, +1.0f, +1.0f), Colors::Yellow  },
-		{ glm::vec3(+1.0f, +1.0f, +1.0f), Colors::Cyan    },
-		{ glm::vec3(+1.0f, -1.0f, +1.0f), Colors::Magenta }
+		{ glm::vec3(-1.0, 1.0,-1.0),	glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(0.0,0.0)},
+		{ glm::vec3(1.0, 1.0,-1.0),		glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(1.0,0.0)},
+		{ glm::vec3(-1.0,-1.0,-1.0),	glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(0.0,1.0)},
+		{ glm::vec3(-1.0,-1.0,-1.0),	glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(0.0,1.0)},
+		{ glm::vec3(1.0, 1.0,-1.0),		glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(1.0,0.0)},
+		{ glm::vec3(1.0,-1.0,-1.0),		glm::vec3(0.0, 0.0, -1.0) ,glm::vec2(1.0,1.0)},
+		
+		{ glm::vec3(1.0 , 1.0, -1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(0.0, 0.0)},
+		{ glm::vec3(1.0 , 1.0,  1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(1.0 ,-1.0, -1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(1.0 ,-1.0, -1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(1.0 , 1.0,  1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(1.0 ,-1.0,  1.0),	glm::vec3(1.0, 0.0, 0.0) ,glm::vec2(1.0, 1.0)},
+
+		{ glm::vec3(1.0 , 1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 , 1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 1.0)},
+		{ glm::vec3(1.0 ,-1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(1.0 ,-1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 , 1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 1.0)},
+		{ glm::vec3(-1.0 ,-1.0,  1.0),	glm::vec3(0.0, 0.0, 1.0) ,glm::vec2(1.0, 1.0)},
+
+		{ glm::vec3(-1.0 , 1.0,  1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(0.0, 0.0)},
+		{ glm::vec3(-1.0 , 1.0, -1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 ,-1.0,  1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(-1.0 ,-1.0,  1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(-1.0 , 1.0, -1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 ,-1.0, -1.0),	glm::vec3(-1.0, 0.0, 0.0) ,glm::vec2(1.0, 1.0)},
+
+		{ glm::vec3(-1.0 , 1.0,  1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(0.0, 0.0)},
+		{ glm::vec3(1.0 , 1.0,  1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 , 1.0, -1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(-1.0 , 1.0, -1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(1.0 , 1.0,  1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(1.0 , 1.0, -1.0),	glm::vec3(0.0, 1.0, 0.0) ,glm::vec2(1.0, 1.0)},
+
+		{ glm::vec3(-1.0 ,-1.0, -1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(0.0, 0.0)},
+		{ glm::vec3(1.0 ,-1.0, -1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(-1.0 ,-1.0,  1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(-1.0 ,-1.0,  1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(0.0, 1.0)},
+		{ glm::vec3(1.0 ,-1.0, -1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(1.0, 0.0)},
+		{ glm::vec3(1.0 ,-1.0,  1.0),	glm::vec3(0.0, -1.0, 0.0) ,glm::vec2(1.0, 1.0)},
 	};
 
 	UINT indices[] = {
 		// front face
 		0, 1, 2,
-		0, 2, 3,
+		3, 4, 5,
 
 		// back face
-		4, 6, 5,
-		4, 7, 6,
+		6, 7, 8,
+		9, 10, 11,
 
 		// left face
-		4, 5, 1,
-		4, 1, 0,
+		12, 13, 14,
+		15, 16, 17,
 
 		// right face
-		3, 2, 6,
-		3, 6, 7,
+		18, 19, 20,
+		21, 22, 23,
 
 		// top face
-		1, 5, 6,
-		1, 6, 2,
+		24, 25, 26,
+		27, 28, 29,
 
 		// bottom face
-		4, 0, 3,
-		4, 3, 7
+		30, 31, 32,
+		33, 34, 35
 	};
 
 	auto pEffect = ShaderManager::GetInstance()->GetShader(Ind3dDevice, TEXT("FX/StaticMesh.fx"));

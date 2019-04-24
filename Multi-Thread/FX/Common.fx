@@ -53,3 +53,12 @@ DepthStencilState DSS_Less
 	DepthWriteMask = All;
 	DepthFunc = LESS;
 };
+
+
+float3 EncodeNormal(float3 InNormalValue){
+    return (InNormalValue + 1.0f)*0.5f;
+}
+
+float3 DecodeNormal(float3 InNormalRGB){
+    return InNormalRGB * 2.0f - 1.0f;
+}

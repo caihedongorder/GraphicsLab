@@ -75,6 +75,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>D:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;D:\Multi-Thread\Multi-Thread\Include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86;D:\Multi-Thread\Multi-Thread\Libs;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)\Multi-Thread\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

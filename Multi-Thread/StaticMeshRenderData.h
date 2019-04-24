@@ -12,7 +12,8 @@ public:
 	struct FVectex 
 	{
 		glm::vec3 Pos;
-		glm::vec4 Color;
+		glm::vec3 Normal;
+		glm::vec2 uv;
 	};
 public:
 	StaticMeshRenderData(const Transform& InLocal2WorldTransform);

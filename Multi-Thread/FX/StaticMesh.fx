@@ -14,18 +14,21 @@ cbuffer cbPerFrame: register(b0)
 cbuffer cbPerObject: register(b1)
 {
 	float4x4 modelMat;
+	float4x4 modelMatInvT;
 };
 
 struct VertexIn
 {
 	float3 PosL  : POSITION;
-    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+	float2 UV : TEXCOORD0;
 };
 
 struct VertexOut
 {
 	float4 PosH  : SV_POSITION;
-    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+	float2 UV : TEXCOORD0;
 };
 
 struct PixelOutputType
@@ -43,7 +46,8 @@ VertexOut DeferedBasePassVS(VertexIn vin)
 	vout.PosH = mul(float4(vin.PosL, 1.0f), mvp);
 	
 	// Just pass vertex color into the pixel shader.
-    vout.Color = vin.Color;
+	vout.Normal = mul(modelMatInvT,float4(vin.Normal,0)).xyz;
+	vout.UV = vin.UV;
     
     return vout;
 }
@@ -51,8 +55,10 @@ VertexOut DeferedBasePassVS(VertexIn vin)
 PixelOutputType DeferedBasePassPS(VertexOut pin)
 {
 	PixelOutputType output;
-    output.color = pin.Color;
-	output.normal = pin.Color;
+	float3 normalValue = EncodeNormal(pin.Normal);
+	//normalValue = float3(1,0,0);
+    output.color = float4(normalValue,1);
+	output.normal = float4(normalValue,1);
 	
 	return output;
 }
@@ -67,14 +73,15 @@ VertexOut ForwardBasePassVS(VertexIn vin)
 	vout.PosH = mul(float4(vin.PosL, 1.0f), mvp);
 	
 	// Just pass vertex color into the pixel shader.
-    vout.Color = vin.Color;
+	vout.Normal = mul(modelMatInvT,float4(vin.Normal,0)).xyz;
+	vout.UV = vin.UV;
     
     return vout;
 }
 
 float4 ForwardBasePassPS(VertexOut pin):SV_Target
 {
-	return pin.Color;
+	return float4(pin.Normal,1);
 }
 
 technique11 BaseTech

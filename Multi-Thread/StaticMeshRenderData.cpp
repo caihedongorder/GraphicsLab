@@ -55,7 +55,8 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 	D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{"NORMAL",	0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
 
 	mTech = Effect->GetTechniqueByName("BaseTech");
@@ -63,7 +64,7 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 	// Create the input layout
 	D3DX11_PASS_DESC passDesc;
 	mTech->GetPassByIndex(0)->GetDesc(&passDesc);
-	HR(Ind3dDevice->CreateInputLayout(vertexDesc, 2, passDesc.pIAInputSignature,
+	HR(Ind3dDevice->CreateInputLayout(vertexDesc, 3, passDesc.pIAInputSignature,
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
@@ -71,8 +72,12 @@ void StaticMeshRenderData::OnRenderDeferedBasePass(ID3D11DeviceContext* InD3dDev
 {
 	auto local2WorldMat = glm::mat4(1.0f);
 
-	auto WorldViewProj = Effect->GetVariableByName("modelMat")->AsMatrix();
-	WorldViewProj->SetMatrix(glm::value_ptr(local2WorldMat));
+	auto ModelMatrix = Effect->GetVariableByName("modelMat")->AsMatrix();
+	ModelMatrix->SetMatrix(glm::value_ptr(local2WorldMat));
+
+	auto local2WorldMatInvT =  glm::transpose(glm::inverse(local2WorldMat));
+	auto modelMatInvT = Effect->GetVariableByName("modelMatInvT")->AsMatrix();
+	modelMatInvT->SetMatrix(glm::value_ptr(local2WorldMatInvT));
 
 	InD3dDeviceContext->IASetInputLayout(mInputLayout);
 	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
