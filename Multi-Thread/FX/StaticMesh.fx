@@ -77,7 +77,7 @@ float4 ForwardBasePassPS(VertexOut pin):SV_Target
 	return pin.Color;
 }
 
-technique11 ColorTech
+technique11 BaseTech
 {
     pass DeferedBasePass
     {

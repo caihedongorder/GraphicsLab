@@ -86,7 +86,7 @@ void World::CreateBox(ID3D11Device* Ind3dDevice, const Transform& InLocal2WorldT
 		4, 3, 7
 	};
 
-	auto pEffect = ShaderManager::GetInstance()->GetShader(Ind3dDevice, TEXT("FX/color.fx"));
+	auto pEffect = ShaderManager::GetInstance()->GetShader(Ind3dDevice, TEXT("FX/StaticMesh.fx"));
 	pBoxMesh->Init(Ind3dDevice, vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), pEffect);
 
 	allRenderDatas.push_back(pBoxMesh);

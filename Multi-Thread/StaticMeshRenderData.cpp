@@ -58,7 +58,7 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 		{"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
 
-	mTech = Effect->GetTechniqueByName("ColorTech");
+	mTech = Effect->GetTechniqueByName("BaseTech");
 
 	// Create the input layout
 	D3DX11_PASS_DESC passDesc;

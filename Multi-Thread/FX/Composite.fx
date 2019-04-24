@@ -65,7 +65,7 @@ float4 PS(VertexOut pin) : SV_Target
 	return outputColor;
 }
 
-technique11 ColorTech
+technique11 BaseTech
 {
     pass Composite
     {
