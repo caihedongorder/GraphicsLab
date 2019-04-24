@@ -3,15 +3,7 @@
 //
 // Transforms and colors geometry.
 //***************************************************************************************
-
-RasterizerState WireframeRS
-{
-    FillMode = Wireframe;
-    CullMode = Back;
-    FrontCounterClockwise = false;
-    AntialiasedLineEnable = true;
-};
-
+#include "Common.fx"
 
 cbuffer cbPerFrame: register(b0)
 {
@@ -36,7 +28,13 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-VertexOut VS(VertexIn vin)
+struct PixelOutputType
+{
+    float4 color : SV_Target0;
+    float4 normal : SV_Target1;
+};
+
+VertexOut DeferedBasePassVS(VertexIn vin)
 {
 	VertexOut vout;
 	
@@ -50,19 +48,51 @@ VertexOut VS(VertexIn vin)
     return vout;
 }
 
-float4 PS(VertexOut pin) : SV_Target
+PixelOutputType DeferedBasePassPS(VertexOut pin)
 {
-    return pin.Color;
-    //return float4(1,0,0,0);
+	PixelOutputType output;
+    output.color = pin.Color;
+	output.normal = pin.Color;
+	
+	return output;
+}
+
+
+VertexOut ForwardBasePassVS(VertexIn vin)
+{
+	VertexOut vout;
+	
+	// Transform to homogeneous clip space.
+	float4x4 mvp = mul(mul(modelMat,viewMat),projMat);
+	vout.PosH = mul(float4(vin.PosL, 1.0f), mvp);
+	
+	// Just pass vertex color into the pixel shader.
+    vout.Color = vin.Color;
+    
+    return vout;
+}
+
+float4 ForwardBasePassPS(VertexOut pin):SV_Target
+{
+	return pin.Color;
 }
 
 technique11 ColorTech
 {
-    pass BasePass
+    pass DeferedBasePass
     {
-        //SetRasterizerState(WireframeRS);
-        SetVertexShader( CompileShader( vs_5_0, VS() ) );
-		SetGeometryShader( NULL );
-        SetPixelShader( CompileShader( ps_5_0, PS() ) );
+		SetDepthStencilState(DSS_Less,0);
+		SetRasterizerState(CullRS);
+		
+        SetVertexShader( CompileShader( vs_5_0, DeferedBasePassVS() ) );
+        SetPixelShader( CompileShader( ps_5_0, DeferedBasePassPS() ) );
+    }
+	pass ForwardBasePass
+    {
+		SetDepthStencilState(DSS_Less,0);
+		SetRasterizerState(CullRS);
+		
+        SetVertexShader( CompileShader( vs_5_0, ForwardBasePassVS() ) );
+        SetPixelShader( CompileShader( ps_5_0, ForwardBasePassPS() ) );
     }
 }

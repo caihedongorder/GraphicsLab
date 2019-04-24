@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FullScreenRenderData.h" />
     <ClInclude Include="GraphSystem.h" />
     <ClInclude Include="JobSystem.h" />
     <ClInclude Include="GraphicsLab.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FullScreenRenderData.cpp" />
     <ClCompile Include="GraphSystem.cpp" />
     <ClCompile Include="JobSystem.cpp" />
     <ClCompile Include="main.cpp" />

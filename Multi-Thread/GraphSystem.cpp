@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "GraphSystem.h"
 #include <assert.h>
+#include "ShaderManager.h"
 
 int (WINAPIV * __vsnwprintf)(wchar_t *, size_t, const wchar_t*, va_list) = _vsnwprintf;
 
@@ -15,6 +16,8 @@ glm::vec4 Colors::Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 
 glm::vec4 Colors::Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
 glm::vec4 Colors::LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
+
+bool GDeferedRender = true;
 
 GraphSystem::GraphSystem(World *InWorld)
 	:
@@ -68,6 +71,7 @@ void GraphSystem::ReleaseGBuffer()
 		ReleaseCOM(mGBufferSRVs[iGBuffIdx]);
 		ReleaseCOM(mGBufferTexture[iGBuffIdx]);
 	}
+
 }
 
 void GraphSystem::OnRenderThreadProc(void * InGraphSystem)
@@ -199,45 +203,79 @@ bool GraphSystem::InitDirect3D(HWND InhWnd, int InClientWidth, int InClientHeigh
 	hEventBeginRender = ::CreateEvent(NULL, FALSE, FALSE, TEXT("BeginRender"));
 	hEventFinishRender = ::CreateEvent(NULL, FALSE, FALSE, TEXT("FinishRender"));
 
+	CreateCompositeQuad();
+
 	return true;
 }
 
+
+void GraphSystem::CreateCompositeQuad()
+{
+	CompositeQuad = std::shared_ptr<FullScreenRenderData>(new FullScreenRenderData);
+	CompositeQuad->Init(md3dDevice, ShaderManager::GetInstance()->GetShader(md3dDevice, TEXT("FX/Composite.fx")));
+}
 
 bool GraphSystem::CreateGBuffer()
 {
 	ReleaseGBuffer();
 
+	D3D11_TEXTURE2D_DESC textureDesc;
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+	textureDesc.Width = mClientWidth;
+	textureDesc.Height = mClientHeight;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	for (int iGBuffIdx = 0; iGBuffIdx < GBUFFER_NUM; ++iGBuffIdx)
 	{
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ZeroMemory(&textureDesc, sizeof(textureDesc));
-		textureDesc.Width = mClientWidth;
-		textureDesc.Height = mClientHeight;
-		textureDesc.MipLevels = 1;
-		textureDesc.ArraySize = 1;
-		textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = 0;
-		textureDesc.MiscFlags = 0;
-
 		HR(md3dDevice->CreateTexture2D(&textureDesc, NULL, &mGBufferTexture[iGBuffIdx]));
-
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format = textureDesc.Format;
-		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 		HR(md3dDevice->CreateRenderTargetView(mGBufferTexture[iGBuffIdx], &renderTargetViewDesc, &mGBufferRTVs[iGBuffIdx]));
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-		shaderResourceViewDesc.Format = textureDesc.Format;
-		shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-		shaderResourceViewDesc.Texture2D.MipLevels = 1;
 		HR(md3dDevice->CreateShaderResourceView(mGBufferTexture[iGBuffIdx], &shaderResourceViewDesc, &mGBufferSRVs[iGBuffIdx]));
 	}
+
+	D3D11_TEXTURE2D_DESC depthStencilDesc;
+	depthStencilDesc.Width = mClientWidth;
+	depthStencilDesc.Height = mClientHeight;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.ArraySize = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	// Use 4X MSAA? --must match swap chain MSAA values.
+	if (mEnable4xMsaa)
+	{
+		depthStencilDesc.SampleDesc.Count = 4;
+		depthStencilDesc.SampleDesc.Quality = m4xMsaaQuality - 1;
+	}
+	// No MSAA
+	else
+	{
+		depthStencilDesc.SampleDesc.Count = 1;
+		depthStencilDesc.SampleDesc.Quality = 0;
+	}
+
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.CPUAccessFlags = 0;
+	depthStencilDesc.MiscFlags = 0;
 
 	return true;
 }
@@ -319,20 +357,74 @@ void GraphSystem::OnResize()
 
 void GraphSystem::OnRender()
 {
-	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
-	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
 	mWorld->UpdatePerFrameCBuffer(md3dImmediateContext);
-	
-	OnRenderBasePass();
+
+	if (GDeferedRender)
+	{
+		OnDeferedRender();
+	}
+	else
+	{
+		OnForwardRender();
+	}
+
 
 	HR(mSwapChain->Present(0, 0));
 
 }
 
-void GraphSystem::OnRenderBasePass()
+void GraphSystem::OnForwardRender()
 {
-	
-	mWorld->OnRenderBasePass(md3dImmediateContext);
+	OnRenderForwardBasePass();
+}
+
+void GraphSystem::OnRenderForwardBasePass()
+{
+	md3dImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+
+	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::Black));
+	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_STENCIL | D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	mWorld->OnRenderForwardBasePass(md3dImmediateContext);
+}
+
+void GraphSystem::OnDeferedRender()
+{
+	OnRenderDeferedBasePass();
+	OnCompositeGraphics();
+}
+
+void GraphSystem::OnRenderDeferedBasePass()
+{
+	md3dImmediateContext->OMSetRenderTargets(GBUFFER_NUM, mGBufferRTVs, mDepthStencilView);
+
+	for (int iGBufferIdx = 0; iGBufferIdx < GBUFFER_NUM; iGBufferIdx++)
+	{
+		md3dImmediateContext->ClearRenderTargetView(mGBufferRTVs[iGBufferIdx], reinterpret_cast<const float*>(&Colors::Black));
+	}
+	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_STENCIL | D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+
+	mWorld->OnRenderDeferedBasePass(md3dImmediateContext);
+
+}
+
+void GraphSystem::OnCompositeGraphics()
+{
+	md3dImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+
+	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
+	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+
+	CompositeQuad->SetSRV("colorTexture", mGBufferSRVs[0]);
+	CompositeQuad->SetSRV("normalTexture", mGBufferSRVs[1]);
+
+	CompositeQuad->OnRender(md3dImmediateContext, mWorld->GetPerFrameCBuffer(),"Composite");
+
+	LPCSTR strVarNames[] = { "colorTexture", "normalTexture" };
+
+	CompositeQuad->ClearSRVs(md3dImmediateContext, "Composite", strVarNames, 2);
+
 }
 

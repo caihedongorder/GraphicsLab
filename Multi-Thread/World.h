@@ -19,9 +19,14 @@ public:
 
 	void CreateBox(ID3D11Device* Ind3dDevice,const Transform& InLocal2WorldTransform);
 
-	void OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext);
+	void OnRenderDeferedBasePass(ID3D11DeviceContext* InD3dDeviceContext);
+
+	void OnRenderForwardBasePass(ID3D11DeviceContext* InD3dDeviceContext);
+
 
 	void UpdatePerFrameCBuffer(ID3D11DeviceContext* InD3dDeviceContext);
+
+	ID3D11Buffer* GetPerFrameCBuffer() { return mPerFrameConstBuff; }
 
 private:
 	std::list<std::shared_ptr<StaticMeshRenderData>> allRenderDatas;

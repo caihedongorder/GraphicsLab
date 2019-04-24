@@ -67,7 +67,7 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
-void StaticMeshRenderData::OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
+void StaticMeshRenderData::OnRenderDeferedBasePass(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
 {
 	auto local2WorldMat = glm::mat4(1.0f);
 
@@ -86,7 +86,7 @@ void StaticMeshRenderData::OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceCont
 	D3DX11_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
 
-	if (auto pBasePass =  mTech->GetPassByName("BasePass"))
+	if (auto pBasePass =  mTech->GetPassByName("DeferedBasePass"))
 	{
 		pBasePass->Apply(0, InD3dDeviceContext);
 
@@ -96,4 +96,35 @@ void StaticMeshRenderData::OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceCont
 		InD3dDeviceContext->DrawIndexed(36, 0, 0);
 	}
 	
+}
+
+void StaticMeshRenderData::OnRenderForwardBasePass(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
+{
+	auto local2WorldMat = glm::mat4(1.0f);
+
+	auto WorldViewProj = Effect->GetVariableByName("modelMat")->AsMatrix();
+	WorldViewProj->SetMatrix(glm::value_ptr(local2WorldMat));
+
+	InD3dDeviceContext->IASetInputLayout(mInputLayout);
+	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	UINT stride = sizeof(FVectex);
+	UINT offset = 0;
+	InD3dDeviceContext->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
+	InD3dDeviceContext->IASetIndexBuffer(mIB, DXGI_FORMAT_R32_UINT, 0);
+
+
+	D3DX11_TECHNIQUE_DESC techDesc;
+	mTech->GetDesc(&techDesc);
+
+	if (auto pBasePass = mTech->GetPassByName("ForwardBasePass"))
+	{
+		pBasePass->Apply(0, InD3dDeviceContext);
+
+		InD3dDeviceContext->VSSetConstantBuffers(0, 1, &InPerFrameConstBuff);
+
+		// 36 indices for the box.
+		InD3dDeviceContext->DrawIndexed(36, 0, 0);
+	}
+
 }

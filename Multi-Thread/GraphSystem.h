@@ -5,6 +5,7 @@
 #include <DxErr.h>
 #include <xnamath.h>
 #include "World.h"
+#include "FullScreenRenderData.h"
 
 
 #if defined(DEBUG) | defined(_DEBUG)
@@ -76,6 +77,7 @@ public:
 	bool InitDirect3D(HWND InhWnd,int InClientWidth,int InClientHeight);
 
 
+
 	void OnResize();
 
 
@@ -88,11 +90,20 @@ public:
 private:
 	static void WINAPI OnRenderThreadProc(void * InGraphSystem);
 	void OnRender();
-	void OnRenderBasePass();
+
+	void OnForwardRender();
+	void OnRenderForwardBasePass();
+
+
+	void OnDeferedRender();
+	void OnRenderDeferedBasePass();
+	void OnCompositeGraphics();
 
 private:
 	bool CreateGBuffer();
 	void ReleaseGBuffer();
+
+	void CreateCompositeQuad();
 
 private:
 	D3D_DRIVER_TYPE md3dDriverType;
@@ -107,6 +118,9 @@ private:
 	ID3D11Texture2D* mGBufferTexture[GBUFFER_NUM];
 	ID3D11RenderTargetView* mGBufferRTVs[GBUFFER_NUM];
 	ID3D11ShaderResourceView* mGBufferSRVs[GBUFFER_NUM];
+
+
+	std::shared_ptr<FullScreenRenderData> CompositeQuad;
 
 	D3D11_VIEWPORT mScreenViewport;
 
