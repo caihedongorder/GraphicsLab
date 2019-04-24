@@ -43,6 +43,9 @@ void World::Init(ID3D11Device* Ind3dDevice)
 		glm::vec3(0, 1, 0));
 
 	mPerFrameData.projMat = glm::perspectiveLH(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 1000.0f);
+
+	mCamera = std::shared_ptr<Camera>(new Camera);
+	mCamera->Init(glm::vec3(x, y, z), glm::vec3(0, 0, 0), 45.0f, 800.0f / 600.0f, 1.0f, 1000.0f);
 }
 
 void World::CreateBox(ID3D11Device* Ind3dDevice, const Transform& InLocal2WorldTransform)
@@ -152,8 +155,10 @@ void World::UpdatePerFrameCBuffer(ID3D11DeviceContext* InD3dDeviceContext)
 		auto dataPtr = (PerFrameData *)mappedResource.pData;
 
 		// Copy the matrices into the constant buffer.
-		dataPtr->viewMat = glm::transpose(mPerFrameData.viewMat);
-		dataPtr->projMat = glm::transpose(mPerFrameData.projMat);
+		//dataPtr->viewMat = glm::transpose(mPerFrameData.viewMat);
+		dataPtr->viewMat = glm::transpose(mCamera->GetViewMat());
+		//dataPtr->projMat = glm::transpose(mPerFrameData.projMat);
+		dataPtr->projMat = glm::transpose(mCamera->GetProjectMat());
 
 		InD3dDeviceContext->Unmap(mPerFrameConstBuff, 0);
 	}

@@ -11,7 +11,9 @@
 struct Transform
 {
 	glm::vec3 location;
-	glm::quat Rotator;
+	glm::quat Quat;
 	glm::vec3 scale;
+
+	void Translate(const glm::vec3& InDelta);
 };
 

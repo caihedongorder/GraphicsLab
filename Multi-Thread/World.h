@@ -2,6 +2,7 @@
 #include <list>
 #include <memory>
 #include "StaticMeshRenderData.h"
+#include "Camera.h"
 
 struct PerFrameData 
 {
@@ -33,6 +34,8 @@ private:
 
 	PerFrameData mPerFrameData;
 	ID3D11Buffer* mPerFrameConstBuff;
+
+	std::shared_ptr<Camera> mCamera;
 
 };
 

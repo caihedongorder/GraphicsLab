@@ -152,10 +152,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="FullScreenRenderData.h" />
     <ClInclude Include="GraphSystem.h" />
     <ClInclude Include="JobSystem.h" />
     <ClInclude Include="GraphicsLab.h" />
+    <ClInclude Include="MathUtil.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShaderManager.h" />
     <ClInclude Include="StaticMeshRenderData.h" />
@@ -165,10 +167,12 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FullScreenRenderData.cpp" />
     <ClCompile Include="GraphSystem.cpp" />
     <ClCompile Include="JobSystem.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MathUtil.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="StaticMeshRenderData.cpp" />
     <ClCompile Include="stdafx.cpp">
