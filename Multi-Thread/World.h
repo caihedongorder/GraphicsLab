@@ -21,6 +21,8 @@ public:
 
 	void OnRender(ID3D11DeviceContext* InD3dDeviceContext);
 
+	void UpdatePerFrameCBuffer(ID3D11DeviceContext* InD3dDeviceContext);
+
 private:
 	std::list<std::shared_ptr<StaticMeshRenderData>> allRenderDatas;
 

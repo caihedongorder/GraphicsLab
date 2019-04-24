@@ -94,6 +94,16 @@ void World::CreateBox(ID3D11Device* Ind3dDevice, const Transform& InLocal2WorldT
 
 void World::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
 {
+	UpdatePerFrameCBuffer(InD3dDeviceContext);
+
+	for (auto It = allRenderDatas.begin() ; It != allRenderDatas.end() ; ++It)
+	{
+		(*It)->OnRenderBasePass(InD3dDeviceContext, mPerFrameConstBuff);
+	}
+}
+
+void World::UpdatePerFrameCBuffer(ID3D11DeviceContext* InD3dDeviceContext)
+{
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	auto result = InD3dDeviceContext->Map(mPerFrameConstBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (SUCCEEDED(result))
@@ -106,10 +116,5 @@ void World::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
 		dataPtr->projMat = glm::transpose(mPerFrameData.projMat);
 
 		InD3dDeviceContext->Unmap(mPerFrameConstBuff, 0);
-	}
-
-	for (auto It = allRenderDatas.begin() ; It != allRenderDatas.end() ; ++It)
-	{
-		(*It)->OnRender(InD3dDeviceContext, mPerFrameConstBuff);
 	}
 }

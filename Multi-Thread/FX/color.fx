@@ -58,7 +58,7 @@ float4 PS(VertexOut pin) : SV_Target
 
 technique11 ColorTech
 {
-    pass P0
+    pass BasePass
     {
         //SetRasterizerState(WireframeRS);
         SetVertexShader( CompileShader( vs_5_0, VS() ) );

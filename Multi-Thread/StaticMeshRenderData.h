@@ -21,7 +21,7 @@ public:
 	void Init(ID3D11Device* Ind3dDevice,const FVectex* InVectexBasePtr, int InVertexCount, const UINT* InIndicesBasePtr, int InIndicesCount,
 		ID3DX11Effect* InEffect);
 
-	void OnRender(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff);
+	void OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff);
 
 private:
 	ID3D11Buffer* mIB;

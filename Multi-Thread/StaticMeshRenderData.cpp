@@ -67,25 +67,9 @@ void StaticMeshRenderData::Init(ID3D11Device* Ind3dDevice, const FVectex* InVect
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
-void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
+void StaticMeshRenderData::OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext, ID3D11Buffer* InPerFrameConstBuff)
 {
-	float mPhi = glm::radians(180.0f) * 0.25f;
-	float mTheta = glm::radians(180.0f) * 1.5f;
-	float mRadius = 5.0f;
-	// Convert Spherical to Cartesian coordinates.
-	float x = mRadius * sinf(mPhi)*cosf(mTheta);
-	float z = mRadius * sinf(mPhi)*sinf(mTheta);
-	float y = mRadius * cosf(mPhi);
-
 	auto local2WorldMat = glm::mat4(1.0f);
-
-	auto viewMat = glm::lookAtLH(glm::vec3(x, y, z), 
-		glm::vec3(0, 0, 0), 
-		glm::vec3(0, 1, 0));
-
-	auto perpMat = glm::perspectiveLH(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 1000.0f);
-
-	auto mvp = perpMat * viewMat;
 
 	auto WorldViewProj = Effect->GetVariableByName("modelMat")->AsMatrix();
 	WorldViewProj->SetMatrix(glm::value_ptr(local2WorldMat));
@@ -102,14 +86,14 @@ void StaticMeshRenderData::OnRender(ID3D11DeviceContext* InD3dDeviceContext, ID3
 	D3DX11_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
 
-	
-	for (UINT p = 0; p < techDesc.Passes; ++p)
+	if (auto pBasePass =  mTech->GetPassByName("BasePass"))
 	{
-		mTech->GetPassByIndex(p)->Apply(0, InD3dDeviceContext);
+		pBasePass->Apply(0, InD3dDeviceContext);
 
 		InD3dDeviceContext->VSSetConstantBuffers(0, 1, &InPerFrameConstBuff);
 
 		// 36 indices for the box.
 		InD3dDeviceContext->DrawIndexed(36, 0, 0);
 	}
+	
 }
