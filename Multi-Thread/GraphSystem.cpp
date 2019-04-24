@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "GraphSystem.h"
 #include <assert.h>
 
@@ -35,11 +35,18 @@ GraphSystem::GraphSystem(World *InWorld)
 	, hEventFinishRender(NULL)
 {
 	ZeroMemory(&mScreenViewport, sizeof(D3D11_VIEWPORT));
+
+	ZeroMemory(mGBufferTexture, sizeof(mGBufferTexture));
+	ZeroMemory(mGBufferRTVs, sizeof(mGBufferRTVs));
+	ZeroMemory(mGBufferSRVs, sizeof(mGBufferSRVs));
+
 }
 
 
 GraphSystem::~GraphSystem()
 {
+	ReleaseGBuffer();
+
 	ReleaseCOM(mRenderTargetView);
 	ReleaseCOM(mDepthStencilView);
 	ReleaseCOM(mSwapChain);
@@ -51,6 +58,16 @@ GraphSystem::~GraphSystem()
 
 	ReleaseCOM(md3dImmediateContext);
 	ReleaseCOM(md3dDevice);
+}
+
+void GraphSystem::ReleaseGBuffer()
+{
+	for (int iGBuffIdx = 0; iGBuffIdx < GBUFFER_NUM; ++iGBuffIdx)
+	{
+		ReleaseCOM(mGBufferRTVs[iGBuffIdx]);
+		ReleaseCOM(mGBufferSRVs[iGBuffIdx]);
+		ReleaseCOM(mGBufferTexture[iGBuffIdx]);
+	}
 }
 
 void GraphSystem::OnRenderThreadProc(void * InGraphSystem)
@@ -174,6 +191,7 @@ bool GraphSystem::InitDirect3D(HWND InhWnd, int InClientWidth, int InClientHeigh
 	// The remaining steps that need to be carried out for d3d creation
 	// also need to be executed every time the window is resized.  So
 	// just call the OnResize method here to avoid code duplication.
+
 	
 	DWORD ThreadID;
 	hRenderThreadHandle = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&GraphSystem::OnRenderThreadProc, (LPVOID)this, 0, &ThreadID);
@@ -184,6 +202,45 @@ bool GraphSystem::InitDirect3D(HWND InhWnd, int InClientWidth, int InClientHeigh
 	return true;
 }
 
+
+bool GraphSystem::CreateGBuffer()
+{
+	ReleaseGBuffer();
+
+	for (int iGBuffIdx = 0; iGBuffIdx < GBUFFER_NUM; ++iGBuffIdx)
+	{
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ZeroMemory(&textureDesc, sizeof(textureDesc));
+		textureDesc.Width = mClientWidth;
+		textureDesc.Height = mClientHeight;
+		textureDesc.MipLevels = 1;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.CPUAccessFlags = 0;
+		textureDesc.MiscFlags = 0;
+
+		HR(md3dDevice->CreateTexture2D(&textureDesc, NULL, &mGBufferTexture[iGBuffIdx]));
+
+		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		renderTargetViewDesc.Format = textureDesc.Format;
+		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+		HR(md3dDevice->CreateRenderTargetView(mGBufferTexture[iGBuffIdx], &renderTargetViewDesc, &mGBufferRTVs[iGBuffIdx]));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+		shaderResourceViewDesc.Format = textureDesc.Format;
+		shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		shaderResourceViewDesc.Texture2D.MipLevels = 1;
+		HR(md3dDevice->CreateShaderResourceView(mGBufferTexture[iGBuffIdx], &shaderResourceViewDesc, &mGBufferSRVs[iGBuffIdx]));
+	}
+
+	return true;
+}
 
 void GraphSystem::OnResize()
 {
@@ -254,6 +311,10 @@ void GraphSystem::OnResize()
 	mScreenViewport.MaxDepth = 1.0f;
 
 	md3dImmediateContext->RSSetViewports(1, &mScreenViewport);
+
+
+	//创建GBuffer
+	CreateGBuffer();
 }
 
 void GraphSystem::OnRender()
@@ -261,9 +322,17 @@ void GraphSystem::OnRender()
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	mWorld->OnRender(md3dImmediateContext);
+	mWorld->UpdatePerFrameCBuffer(md3dImmediateContext);
+	
+	OnRenderBasePass();
 
 	HR(mSwapChain->Present(0, 0));
 
+}
+
+void GraphSystem::OnRenderBasePass()
+{
+	
+	mWorld->OnRenderBasePass(md3dImmediateContext);
 }
 

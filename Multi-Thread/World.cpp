@@ -92,10 +92,8 @@ void World::CreateBox(ID3D11Device* Ind3dDevice, const Transform& InLocal2WorldT
 	allRenderDatas.push_back(pBoxMesh);
 }
 
-void World::OnRender(ID3D11DeviceContext* InD3dDeviceContext)
+void World::OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext)
 {
-	UpdatePerFrameCBuffer(InD3dDeviceContext);
-
 	for (auto It = allRenderDatas.begin() ; It != allRenderDatas.end() ; ++It)
 	{
 		(*It)->OnRenderBasePass(InD3dDeviceContext, mPerFrameConstBuff);

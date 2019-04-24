@@ -19,7 +19,7 @@ public:
 
 	void CreateBox(ID3D11Device* Ind3dDevice,const Transform& InLocal2WorldTransform);
 
-	void OnRender(ID3D11DeviceContext* InD3dDeviceContext);
+	void OnRenderBasePass(ID3D11DeviceContext* InD3dDeviceContext);
 
 	void UpdatePerFrameCBuffer(ID3D11DeviceContext* InD3dDeviceContext);
 

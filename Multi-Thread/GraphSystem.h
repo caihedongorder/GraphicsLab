@@ -64,13 +64,17 @@ namespace Colors
 	extern glm::vec4 LightSteelBlue;
 }
 
+#define GBUFFER_NUM 2
+
 class GraphSystem
 {
 public:
 	GraphSystem(World *InWorld);
 	~GraphSystem();
 
+
 	bool InitDirect3D(HWND InhWnd,int InClientWidth,int InClientHeight);
+
 
 	void OnResize();
 
@@ -84,6 +88,11 @@ public:
 private:
 	static void WINAPI OnRenderThreadProc(void * InGraphSystem);
 	void OnRender();
+	void OnRenderBasePass();
+
+private:
+	bool CreateGBuffer();
+	void ReleaseGBuffer();
 
 private:
 	D3D_DRIVER_TYPE md3dDriverType;
@@ -94,6 +103,11 @@ private:
 	ID3D11Texture2D* mDepthStencilBuffer;
 	ID3D11RenderTargetView* mRenderTargetView;
 	ID3D11DepthStencilView* mDepthStencilView;
+
+	ID3D11Texture2D* mGBufferTexture[GBUFFER_NUM];
+	ID3D11RenderTargetView* mGBufferRTVs[GBUFFER_NUM];
+	ID3D11ShaderResourceView* mGBufferSRVs[GBUFFER_NUM];
+
 	D3D11_VIEWPORT mScreenViewport;
 
 	UINT		m4xMsaaQuality;
