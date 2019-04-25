@@ -211,3 +211,54 @@ glm::quat MathUtil::SLerp(const glm::quat& InQuat1, const glm::quat& InQuat2, fl
 {
 	return glm::mix(InQuat1, InQuat2, InAlpha);
 }
+
+bool MathUtil::TwoRectIntersect(const glm::vec4& InRect1, const glm::vec4& InRect2, glm::vec4& OutRect)
+{
+	if (InRect1[2] < InRect2[0] ||
+		InRect2[2] < InRect1[0] ||
+		InRect1[3] < InRect2[1] || 
+		InRect2[3] < InRect1[1])
+	{
+		return false;
+	}
+
+	if (InRect1[2] < InRect2[2] &&
+		InRect1[0] > InRect2[0])
+	{
+		OutRect[0] = InRect1[0];
+		OutRect[2] = InRect1[2];
+	}
+	else if (InRect2[2] < InRect1[2] &&
+		InRect2[0] > InRect1[0])
+	{
+		OutRect[0] = InRect2[0];
+		OutRect[2] = InRect2[2];
+	}
+	else
+	{
+		OutRect[0] = InRect1[2] > InRect2[2] ? InRect1[0] : InRect2[0];
+		OutRect[2] = InRect1[0] < InRect2[0] ? InRect1[2] : InRect2[2];
+	}
+
+	if (InRect1[3] < InRect2[3] &&
+		InRect1[1] > InRect2[1])
+	{
+		OutRect[1] = InRect1[1];
+		OutRect[3] = InRect1[3];
+	}
+	else if (InRect2[3] < InRect1[3] &&
+		InRect2[1] > InRect1[1])
+	{
+		OutRect[1] = InRect2[1];
+		OutRect[3] = InRect2[3];
+	}
+	else
+	{
+		OutRect[1] = InRect1[3] > InRect2[3] ? InRect1[1] : InRect2[1];
+		OutRect[3] = InRect1[1] < InRect2[1] ? InRect1[3] : InRect2[3];
+	}
+
+
+
+	return true;
+}

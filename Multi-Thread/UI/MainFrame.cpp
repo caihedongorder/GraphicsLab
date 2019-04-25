@@ -15,16 +15,16 @@ MainFrame::~MainFrame()
 
 }
 
-std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, int InPosX, int InPosY, int InSizeX, int InSizeY)
+std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, int InPosX, int InPosY, int InSizeX, int InSizeY, int InCanvasSizeX, int InCanvasSizeY)
 {
 	std::shared_ptr<WidgetBase> WidgetCreated;
 	if (InWidgetType == EWidgetType_Panel)
 	{
-		WidgetCreated = std::make_shared<WidgetPanel>(InPosX, InPosY, InSizeX, InSizeY);
+		WidgetCreated = std::make_shared<WidgetPanel>(InPosX, InPosY, InSizeX, InSizeY, InCanvasSizeX, InCanvasSizeY);
 	}
 	else if (InWidgetType == EWidgetType_Button)
 	{
-		WidgetCreated = std::make_shared<WidgetControlButton>(InPosX, InPosY, InSizeX, InSizeY);
+		WidgetCreated = std::make_shared<WidgetControlButton>(InPosX, InPosY, InSizeX, InSizeY, InCanvasSizeX, InCanvasSizeY);
 	}
 
 	WidgetCreated->Init();

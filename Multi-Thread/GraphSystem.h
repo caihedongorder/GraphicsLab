@@ -86,6 +86,7 @@ public:
 	void WaitforFinishRender();
 
 	ID3D11Device* GetD3dDevice() { return md3dDevice; }
+	ID3D11DeviceContext* GetD3dDeviceContext() { return md3dImmediateContext; }
 
 private:
 	static void WINAPI OnRenderThreadProc(void * InGraphSystem);

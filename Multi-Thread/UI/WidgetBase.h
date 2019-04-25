@@ -1,19 +1,20 @@
 #pragma once
 #include "UISystemInterface.h"
 #include <d3d11.h>
+#include "UITransform.h"
 
 class WidgetBase : public IWidget
 {
 	friend class MainFrame;
 	friend class WidgetPanel;
 public:
-	WidgetBase(int InPosX,int InPosY,int InSizeX,int InSizeY);
+	WidgetBase(int InPosX,int InPosY,int InSizeX,int InSizeY, int InCanvasSizeX, int InCanvasSizeY);
 	~WidgetBase();
 
 	virtual int GetSizeX() final { return _SizeX; };
 	virtual int GetSizeY() final { return _SizeY; };
-	virtual int GetPosX() final { return _PosX; };
-	virtual int GetPosY() final { return _PosY; };
+	virtual int GetPosX() final { return (int)_Transform.translate.x; };
+	virtual int GetPosY() final { return (int)_Transform.translate.y; };
 
 	virtual bool IsVisible() const final { return _Visible; };
 	virtual void SetVisible(bool InVisible) { _Visible = InVisible; };
@@ -31,11 +32,19 @@ protected:
 	virtual void OnUpdate(float InDeltaTime) {}
 	virtual void OnPostRender() {}
 
-private:
+	void SetCanvasSize(int InCanvasSizeX, int InCanvasSizeY) { _CanvasSizeX = InCanvasSizeX; _CanvasSizeY = InCanvasSizeY; }
+
+protected:
 	bool _IsPenddingDestroy;
 	bool _Visible;
-	int _PosX;
-	int _PosY;
 	int _SizeX;
 	int _SizeY;
+	int _ClipSizeX;
+	int _ClipSizeY;
+	int _CanvasSizeX;
+	int _CanvasSizeY;
+	float _AnchorX;
+	float _AnchorY;
+
+	UITransform _Transform;
 };

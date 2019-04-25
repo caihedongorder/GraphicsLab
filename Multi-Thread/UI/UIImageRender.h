@@ -20,7 +20,9 @@ public:
 	UIImageRender();
 	~UIImageRender();
 
-	void Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect);
+	void Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect,const UITransform& InTransform,
+		const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor
+		, const glm::vec2& InCanvasSize);
 
 	void OnRender(ID3D11DeviceContext* InD3dDeviceContext,LPCSTR strPassName);
 
@@ -28,7 +30,10 @@ public:
 
 	void ClearSRVs(ID3D11DeviceContext* InD3dDeviceContext, LPCSTR strPassName, LPCSTR strVarNames[], int Count);
 
+	void PostRender(const UITransform& InTransform);
 
+private:
+	void GetVertexData(FVectex* OutVertexData);
 private:
 	ID3D11Buffer* mVB;
 	ID3D11InputLayout* mInputLayout;
@@ -36,4 +41,8 @@ private:
 	ID3DX11EffectTechnique* mTech;
 
 	UITransform _Transform;
+	glm::vec2 _Size;
+	glm::vec2 _ClipSize;
+	glm::vec2 _Anchor;
+	glm::vec2 _CanvasSize;
 };

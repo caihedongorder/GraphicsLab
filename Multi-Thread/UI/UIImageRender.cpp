@@ -6,6 +6,9 @@
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "UISystem.h"
+#include "../MathUtil.h"
+
+extern std::shared_ptr<GraphSystem> GGraphSystem;
 
 
 UIImageRender::UIImageRender()
@@ -24,56 +27,27 @@ UIImageRender::~UIImageRender()
 	ReleaseCOM(mInputLayout);
 }
 
-void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect)
+void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, const UITransform& InTransform, 
+	const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor, const glm::vec2& InCanvasSize)
 {
 	int FrameSizeX = UISystem::GetInstance()->GetMainFrame()->GetSizeX();
 	int FrameSizeY = UISystem::GetInstance()->GetMainFrame()->GetSizeY();
 
-	_Transform.translate = { 200,200 };
-	_Transform.scale = { 1,1 };
-	_Transform.Angle = glm::radians(0.0f);
+	_Transform = InTransform;
+	_Size = InSize;
+	_ClipSize = InClipSize;
+	_Anchor = InAnchor;
+	_CanvasSize = InCanvasSize;
 
-	const glm::vec2 UVs[] = {
-		{	glm::vec2(0.0,0.0f)	},
-		{	glm::vec2(0.0,1.0f)	},
-		{	glm::vec2(1.0,0.0f)	},
-		{	glm::vec2(1.0,1.0f)	},
-	};
-
-	int ButtonWidth = 200;
-	int ButtonHeight = 200;
 
 	FVectex Vertex[4];
-
-	glm::vec2 Anchor = { 0.5f,0.5f };
-
-	int ClipWidth = 100;
-	int ClipHeight = 100;
-
-	auto ClipSize = glm::vec2(ClipWidth, ClipHeight);
-
-	glm::vec4 ParentClipRect = { 0,0,800,600 };
-
-	for (int iVertexIdx = 0 ; iVertexIdx < 4 ; ++iVertexIdx)
-	{
-		Vertex[iVertexIdx].LocationAndAnchor.x = (UVs[iVertexIdx].x - Anchor.x) * ButtonWidth;
-		Vertex[iVertexIdx].LocationAndAnchor.y = (UVs[iVertexIdx].y - Anchor.y) * ButtonHeight;
-
-		Vertex[iVertexIdx].ClipRect = { _Transform.translate - Anchor* ClipSize,_Transform.translate + ClipSize*(glm::vec2(1.0f,1.0f) - Anchor) };
-
-		Vertex[iVertexIdx].TranslateAndScale = { _Transform.translate,_Transform.scale };
-		Vertex[iVertexIdx].CanvasSizeAndWidgetSize = { 800,600,ButtonWidth,ButtonWidth };
+	GetVertexData(Vertex);
 	
-		Vertex[iVertexIdx].LocationAndAnchor.z = Anchor.x;
-		Vertex[iVertexIdx].LocationAndAnchor.w = Anchor.y;
-		Vertex[iVertexIdx].RotateAngle = _Transform.Angle;
-	}
-
 	D3D11_BUFFER_DESC vbd;
-	vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	vbd.Usage = D3D11_USAGE_DYNAMIC;
 	vbd.ByteWidth = sizeof(FVectex) * 4;
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbd.CPUAccessFlags = 0;
+	vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	vbd.MiscFlags = 0;
 	vbd.StructureByteStride = 0;
 	D3D11_SUBRESOURCE_DATA vinitData;
@@ -120,7 +94,7 @@ void UIImageRender::OnRender(ID3D11DeviceContext* InD3dDeviceContext,LPCSTR strP
 		pBasePass->Apply(0, InD3dDeviceContext);
 
 		// 36 indices for the box.
-		InD3dDeviceContext->Draw(6, 0);
+		InD3dDeviceContext->Draw(4, 0);
 	}
 
 }
@@ -153,5 +127,57 @@ void UIImageRender::ClearSRVs(ID3D11DeviceContext* InD3dDeviceContext, LPCSTR st
 		}
 
 		pBasePass->Apply(0, InD3dDeviceContext);
+	}
+}
+
+void UIImageRender::PostRender(const UITransform& InTransform)
+{
+	_Transform = InTransform;
+
+	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	auto result = D3dDeviceContext->Map(mVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (SUCCEEDED(result))
+	{
+		FVectex Vertex[4];
+		GetVertexData(Vertex);
+
+		// Get a pointer to the data in the constant buffer.
+		auto dataPtr = (PerFrameData *)mappedResource.pData;
+
+		memcpy(mappedResource.pData, Vertex, sizeof(Vertex));
+
+		D3dDeviceContext->Unmap(mVB, 0);
+	}
+}
+
+void UIImageRender::GetVertexData(FVectex* OutVertexData)
+{
+	const glm::vec2 UVs[] = {
+	{	glm::vec2(0.0,0.0f)	},
+	{	glm::vec2(0.0,1.0f)	},
+	{	glm::vec2(1.0,0.0f)	},
+	{	glm::vec2(1.0,1.0f)	},
+	};
+
+	glm::vec4 ParentClipRect = { 0,0,800,600 };
+	glm::vec4 ClipRect = { _Transform.translate - _Anchor * _ClipSize,_Transform.translate + _ClipSize * (glm::vec2(1.0f,1.0f) - _Anchor) };
+
+	glm::vec4 IntersectedRect;
+	MathUtil::TwoRectIntersect(ParentClipRect, ClipRect, IntersectedRect);
+
+	for (int iVertexIdx = 0; iVertexIdx < 4; ++iVertexIdx)
+	{
+		OutVertexData[iVertexIdx].LocationAndAnchor.x = (UVs[iVertexIdx].x - _Anchor.x) * _Size.x;
+		OutVertexData[iVertexIdx].LocationAndAnchor.y = (UVs[iVertexIdx].y - _Anchor.y) * _Size.y;
+
+		OutVertexData[iVertexIdx].ClipRect = IntersectedRect;
+
+		OutVertexData[iVertexIdx].TranslateAndScale = { _Transform.translate,_Transform.scale };
+		OutVertexData[iVertexIdx].CanvasSizeAndWidgetSize = { _CanvasSize.x,_CanvasSize.y,_Size.x,_Size.y };
+
+		OutVertexData[iVertexIdx].LocationAndAnchor.z = _Anchor.x;
+		OutVertexData[iVertexIdx].LocationAndAnchor.w = _Anchor.y;
+		OutVertexData[iVertexIdx].RotateAngle = glm::radians(_Transform.Angle);
 	}
 }

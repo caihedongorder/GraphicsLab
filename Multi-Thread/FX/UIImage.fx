@@ -29,6 +29,7 @@ struct VertexIn
 struct VertexOut
 {
 	float4 PosH  : SV_POSITION;
+	float4 ClipRect         :CLIP;
     float2 CanvasUV : TEXCOORD0;
 };
 
@@ -50,6 +51,9 @@ VertexOut VS(VertexIn vin)
 
 	float2 screenPos = (UV * 2.0f - 1.0f) * float2(1.0f,-1.0f) ;
 	output.PosH = float4(screenPos,0.0f,1.0f);
+
+	output.ClipRect.xy = vin.ClipRect.xy / vin.CanvasSizeAndWidgetSize.xy;
+	output.ClipRect.zw = vin.ClipRect.zw / vin.CanvasSizeAndWidgetSize.xy;
     
 	return output;
 }
@@ -58,8 +62,11 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
 	float4 outputColor = float4(1,0,0,1);
-//	if(abs(pin.CanvasUV.x) > 0.5 || abs(pin.CanvasUV.y) > 0.5)
-//		discard;
+	if(pin.CanvasUV.x < pin.ClipRect.x ||
+	  pin.CanvasUV.x > pin.ClipRect.z ||
+	  pin.CanvasUV.y < pin.ClipRect.y ||
+	  pin.CanvasUV.y > pin.ClipRect.w)
+		discard;
 	return outputColor;
 
 }

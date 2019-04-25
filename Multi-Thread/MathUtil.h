@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Transform.h"
 #include <glm/gtx/quaternion.hpp>
 
@@ -32,5 +32,10 @@ public:
 	static glm::vec3 rotateVector(const glm::quat& InQuat, const glm::vec3& InVector);
 
 	static glm::quat SLerp(const glm::quat& InQuat1, const glm::quat& InQuat2, float InAlpha);
+
+	/*
+		无论是矩形还是 3d的aabb 都是检测每条轴的相交情况
+	*/
+	static bool TwoRectIntersect(const glm::vec4& InRect1, const glm::vec4& InRect2, glm::vec4& OutRect);
 };
 

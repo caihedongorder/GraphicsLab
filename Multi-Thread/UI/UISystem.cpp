@@ -19,9 +19,26 @@ UISystem::~UISystem()
 bool UISystem::Init()
 {
 	_MainFrame = std::shared_ptr<MainFrame>(new MainFrame(800,600));
-	auto Widget = _MainFrame->CreateWidget(EWidgetType_Panel, 0, 0, 800, 600);
-	auto Button = _MainFrame->CreateWidget(EWidgetType_Button, 0, 0, 100, 100);
-	std::static_pointer_cast<WidgetPanel>(Widget)->AddControl(std::static_pointer_cast<WidgetControlBase>(Button));
+	auto Widget = _MainFrame->CreateWidget(EWidgetType_Panel, 0, 0, 800, 600, 800, 600);
+
+	int StartPosX = 20;
+	int StartPosY = 20;
+
+	int Step = 30;
+	int CurrentPosX = StartPosX;
+	int CurrentPosY = StartPosY;
+	while (CurrentPosY < 600)
+	{
+		CurrentPosX = StartPosX;
+		while (CurrentPosX < 800)
+		{
+			auto Button = _MainFrame->CreateWidget(EWidgetType_Button, CurrentPosX, CurrentPosY, 20, 20, 800, 600);
+			std::static_pointer_cast<WidgetPanel>(Widget)->AddControl(std::static_pointer_cast<WidgetControlBase>(Button));
+			CurrentPosX += Step;
+		}
+		CurrentPosY += Step;
+	}
+	
 	_MainFrame->AddWidget(Widget);
 
 	return true;
