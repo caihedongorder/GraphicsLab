@@ -19,7 +19,6 @@ cbuffer cbPerObject: register(b1)
 
 struct VertexIn
 {
-	float4 ParentClipRect	:PCLIP;			//父亲控件裁剪矩形
 	float4 ClipRect         :CLIP;			//当前控件裁剪矩形
 	float4 TranslateAndScale :TS;			//xy : translate zw : Scale
 	float4 CanvasSizeAndWidgetSize :CW;		//xy : FrameSize zw : WidgetSize

@@ -10,7 +10,6 @@ class UIImageRender
 public:
 	struct FVectex
 	{
-		glm::vec4 ParentClipRect;			//父亲控件裁剪矩形
 		glm::vec4 ClipRect;					//当前控件裁剪矩形
 		glm::vec4 TranslateAndScale;		//xy : translate zw : Scale
 		glm::vec4 CanvasSizeAndWidgetSize;	//xy : FrameSize zw : WidgetSize
