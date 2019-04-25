@@ -2,6 +2,7 @@
 #include "GraphSystem.h"
 #include <assert.h>
 #include "ShaderManager.h"
+#include "UI/UISystem.h"
 
 int (WINAPIV * __vsnwprintf)(wchar_t *, size_t, const wchar_t*, va_list) = _vsnwprintf;
 
@@ -367,6 +368,8 @@ void GraphSystem::OnRender()
 	{
 		OnForwardRender();
 	}
+
+	UISystem::GetInstance()->OnRender(md3dImmediateContext);
 
 
 	HR(mSwapChain->Present(0, 0));
