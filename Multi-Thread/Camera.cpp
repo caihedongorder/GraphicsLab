@@ -32,7 +32,7 @@ void Camera::Init(const glm::vec3& EyeAt, const glm::vec3& TargetPos,
 	ProjectMat = glm::perspectiveLH(glm::radians(InFovy), InAr, InNearPlane, InFarPlane);
 
 
-	Translate({ -2.0f,0.0f,0.0f });
+	Translate({ 0.0f,0.0f,0.0f });
 
 	ViewMat = MathUtil::InverseTransformNoScale(mTransform);
 }
