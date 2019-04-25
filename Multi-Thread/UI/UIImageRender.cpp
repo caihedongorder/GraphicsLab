@@ -29,17 +29,40 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect)
 	int FrameSizeX = UISystem::GetInstance()->GetMainFrame()->GetSizeX();
 	int FrameSizeY = UISystem::GetInstance()->GetMainFrame()->GetSizeY();
 
-	const FVectex Vertex[] = {
+	_Transform.translate = { 100,100 };
+	_Transform.scale = { 1,1 };
+	_Transform.Angle = glm::radians(45.0f);
+
+	const glm::vec2 UVs[] = {
 		{	glm::vec2(0.0,0.0f)	},
-		{	glm::vec2(1.0,1.0f)	},
 		{	glm::vec2(0.0,1.0f)	},
-		{	glm::vec2(0.0,0.0f)	},
 		{	glm::vec2(1.0,0.0f)	},
 		{	glm::vec2(1.0,1.0f)	},
 	};
+
+	int ButtonWidth = 100;
+	int ButtonHeight = 100;
+
+	FVectex Vertex[4];
+
+	glm::vec2 Anchor = { 0.5f,0.5f };
+
+	for (int iVertexIdx = 0 ; iVertexIdx < 4 ; ++iVertexIdx)
+	{
+		Vertex[iVertexIdx].ParentClipRect = { 0,0,800,600 };
+		Vertex[iVertexIdx].ClipRect = { 0,0,ButtonWidth,ButtonHeight };
+		Vertex[iVertexIdx].TranslateAndScale = { _Transform.translate,_Transform.scale };
+		Vertex[iVertexIdx].CanvasSizeAndWidgetSize = { 800,600,ButtonWidth,ButtonWidth };
+		Vertex[iVertexIdx].LocationAndAnchor.x = (UVs[iVertexIdx].x - Anchor.x) * ButtonWidth;
+		Vertex[iVertexIdx].LocationAndAnchor.y = (UVs[iVertexIdx].y - Anchor.y) * ButtonHeight;
+		Vertex[iVertexIdx].LocationAndAnchor.z = Anchor.x;
+		Vertex[iVertexIdx].LocationAndAnchor.w = Anchor.y;
+		Vertex[iVertexIdx].RotateAngle = _Transform.Angle;
+	}
+
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = sizeof(FVectex) * 6;
+	vbd.ByteWidth = sizeof(FVectex) * 4;
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 	vbd.MiscFlags = 0;
@@ -54,7 +77,12 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect)
 	// Create the vertex input layout.
 	D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
 	{
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"PCLIP", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"CLIP", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"CW", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"LA", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"ROTATE", 0, DXGI_FORMAT_R32_FLOAT, 0, 80, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
 	mTech = Effect->GetTechniqueByName("BaseTech");
@@ -62,14 +90,14 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect)
 	// Create the input layout
 	D3DX11_PASS_DESC passDesc;
 	mTech->GetPassByName("UI")->GetDesc(&passDesc);
-	HR(Ind3dDevice->CreateInputLayout(vertexDesc, 1, passDesc.pIAInputSignature,
+	HR(Ind3dDevice->CreateInputLayout(vertexDesc, sizeof(vertexDesc)/sizeof(vertexDesc[0]), passDesc.pIAInputSignature,
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
 void UIImageRender::OnRender(ID3D11DeviceContext* InD3dDeviceContext,LPCSTR strPassName)
 {
 	InD3dDeviceContext->IASetInputLayout(mInputLayout);
-	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	UINT stride = sizeof(FVectex);
 	UINT offset = 0;

@@ -81,6 +81,9 @@
     <ClInclude Include="UI\UIImageRender.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="UI\UITransform.h">
+      <Filter>UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -135,6 +138,9 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="UI\WidgetControlButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UITransform.cpp">
       <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>

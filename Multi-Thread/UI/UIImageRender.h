@@ -1,15 +1,21 @@
-#pragma once
+﻿#pragma once
 #include <xnamath.h>
 #include <d3d11.h>
 #include <d3dx11Effect.h>
 #include "../Transform.h"
+#include "UITransform.h"
 
 class UIImageRender
 {
 public:
 	struct FVectex
 	{
-		glm::vec2 UV;
+		glm::vec4 ParentClipRect;			//父亲控件裁剪矩形
+		glm::vec4 ClipRect;					//当前控件裁剪矩形
+		glm::vec4 TranslateAndScale;		//xy : translate zw : Scale
+		glm::vec4 CanvasSizeAndWidgetSize;	//xy : FrameSize zw : WidgetSize
+		glm::vec4 LocationAndAnchor;		//xy :  Location zw : Anchor
+		float RotateAngle;
 	};
 public:
 	UIImageRender();
@@ -30,4 +36,5 @@ private:
 	ID3DX11Effect* Effect;
 	ID3DX11EffectTechnique* mTech;
 
+	UITransform _Transform;
 };

@@ -168,6 +168,7 @@
     <ClInclude Include="UI\UIImageRender.h" />
     <ClInclude Include="UI\UISystem.h" />
     <ClInclude Include="UI\UISystemInterface.h" />
+    <ClInclude Include="UI\UITransform.h" />
     <ClInclude Include="UI\WidgetBase.h" />
     <ClInclude Include="UI\WidgetControlBase.h" />
     <ClInclude Include="UI\WidgetControlButton.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="UI\MainFrame.cpp" />
     <ClCompile Include="UI\UIImageRender.cpp" />
     <ClCompile Include="UI\UISystem.cpp" />
+    <ClCompile Include="UI\UITransform.cpp" />
     <ClCompile Include="UI\WidgetBase.cpp" />
     <ClCompile Include="UI\WidgetControlBase.cpp" />
     <ClCompile Include="UI\WidgetControlButton.cpp" />
