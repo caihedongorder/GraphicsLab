@@ -84,6 +84,7 @@ void UIRectBatchRender::OnRender()
 
 void UIRectBatchRender::DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const RectRenderElementInCPU& InElement)
 {
+	ScopeCriticalSection Scope(CriticalSection);
 	auto EffectIt = AllBatchElementsInCPU.find(InEffect);
 	if (EffectIt == AllBatchElementsInCPU.end())
 	{

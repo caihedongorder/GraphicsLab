@@ -42,7 +42,14 @@ static inline JobSystem::Job *AllocateJob() {
 }
 
 static void FinishJob(JobSystem::Job *job) {
-	const int32_t unfinishedJobs = --(job->unfinishedJobs);
+	LONG unfinishedJobs;
+	do
+	{
+		unfinishedJobs = job->unfinishedJobs;
+	} while (InterlockedCompareExchange(&job->unfinishedJobs, unfinishedJobs - 1, unfinishedJobs) != unfinishedJobs);
+
+	--unfinishedJobs;
+
 	assert(unfinishedJobs >= 0);
 	if (unfinishedJobs == 0 && job->parent) {
 		FinishJob(job->parent);

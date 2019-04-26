@@ -7,6 +7,7 @@
 #include "UITransform.h"
 #include <map>
 #include <vector>
+#include "../CriticalSection.h"
 
 class UIRectBatchRender
 {
@@ -62,4 +63,6 @@ private:
 	typedef std::multimap<ID3DX11Effect*, TechName2PassRenderCollectionsInGPU> Effect2TechRenderCollectionsInGPU;
 
 	Effect2TechRenderCollectionsInGPU AllBatchElementsInGPU;
+
+	FCriticalSection CriticalSection;
 };

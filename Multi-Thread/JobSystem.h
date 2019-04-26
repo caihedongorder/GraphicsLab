@@ -54,7 +54,7 @@ namespace JobSystem
 		JobFunction function;
 		struct Job *parent;
 		void *data;
-		std::atomic_int_fast32_t unfinishedJobs;
+		LONG unfinishedJobs;
 		char padding[kCdsJobPaddingBytes];
 	} Job;
 

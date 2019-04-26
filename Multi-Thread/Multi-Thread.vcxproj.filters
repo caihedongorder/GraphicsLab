@@ -87,6 +87,9 @@
     <ClInclude Include="UI\UIRectBatchRender.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="CriticalSection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -148,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="UI\UIRectBatchRender.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="CriticalSection.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
