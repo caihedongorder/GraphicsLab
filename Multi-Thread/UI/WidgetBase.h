@@ -2,6 +2,7 @@
 #include "UISystemInterface.h"
 #include <d3d11.h>
 #include "UITransform.h"
+#include <memory>
 
 class WidgetBase : public IWidget
 {
@@ -28,7 +29,7 @@ private:
 	virtual bool OnInit() { return true; }
 
 protected:
-	virtual void OnRender(ID3D11DeviceContext* InD3dContext) {}
+	virtual void OnRender(std::shared_ptr<class UIRectBatchRender> InUIRender) {}
 	virtual void OnUpdate(float InDeltaTime) {}
 	virtual void OnPostRender() {}
 

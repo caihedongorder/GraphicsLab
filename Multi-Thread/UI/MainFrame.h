@@ -19,7 +19,7 @@ public:
 	void AddWidget(std::shared_ptr<WidgetBase> InWidget);
 
 private:
-	void OnRender(ID3D11DeviceContext* InD3dContext);
+	void OnRender(std::shared_ptr<UIRectBatchRender> InUIRender);
 	void OnUpdate(float InDeltaTime);
 	void OnPostRender();
 private:

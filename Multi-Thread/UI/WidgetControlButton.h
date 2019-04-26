@@ -14,7 +14,7 @@ private:
 	virtual bool OnInit();
 
 protected:
-	virtual void OnRender(ID3D11DeviceContext* InD3dContext);
+	virtual void OnRender(std::shared_ptr<UIRectBatchRender> InUIRender);
 	virtual void OnUpdate(float InDeltaTime);
 	virtual void OnPostRender();
 private:

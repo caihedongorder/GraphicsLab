@@ -11,11 +11,11 @@ bool WidgetPanel::OnInit()
 	return true;
 }
 
-void WidgetPanel::OnRender(ID3D11DeviceContext* InD3dContext)
+void WidgetPanel::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
 {
 	for (auto It = _Controls.begin() ; It != _Controls.end() ; ++It)
 	{
-		(*It)->OnRender(InD3dContext);
+		(*It)->OnRender(InUIRender);
 	}
 }
 

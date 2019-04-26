@@ -37,11 +37,11 @@ void MainFrame::AddWidget(std::shared_ptr<WidgetBase> InWidget)
 	_Widgets.push_back(InWidget);
 }
 
-void MainFrame::OnRender(ID3D11DeviceContext* InD3dContext)
+void MainFrame::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
 {
 	for (auto It(_Widgets.begin()); It != _Widgets.end(); ++It)
 	{
-		(*It)->OnRender(InD3dContext);
+		(*It)->OnRender(InUIRender);
 	}
 }
 

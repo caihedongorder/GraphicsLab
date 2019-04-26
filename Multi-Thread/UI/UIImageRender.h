@@ -4,27 +4,21 @@
 #include <d3dx11Effect.h>
 #include "../Transform.h"
 #include "UITransform.h"
+#include "UIRectBatchRender.h"
+#include <memory>
 
 class UIImageRender
 {
 public:
-	struct FVectex
-	{
-		glm::vec4 ClipRect;					//当前控件裁剪矩形
-		glm::vec4 TranslateAndScale;		//xy : translate zw : Scale
-		glm::vec4 CanvasSizeAndWidgetSize;	//xy : FrameSize zw : WidgetSize
-		glm::vec4 LocationAndAnchor;		//xy :  Location zw : Anchor
-		float RotateAngle;
-	};
-public:
 	UIImageRender();
 	~UIImageRender();
 
-	void Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect,const UITransform& InTransform,
+	void Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect,const std::string& InEffectTechName,const std::string& InEffectPassName,
+		const UITransform& InTransform,
 		const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor
 		, const glm::vec2& InCanvasSize);
 
-	void OnRender(ID3D11DeviceContext* InD3dDeviceContext,LPCSTR strPassName);
+	void OnRender(std::shared_ptr<UIRectBatchRender> InUIRender);
 
 	void SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV);
 
@@ -33,7 +27,7 @@ public:
 	void PostRender(const UITransform& InTransform);
 
 private:
-	void GetVertexData(FVectex* OutVertexData);
+	void GetVertexData(UIRectBatchRender::FVectex* OutVertexData);
 private:
 	ID3D11Buffer* mVB;
 	ID3D11InputLayout* mInputLayout;
@@ -45,4 +39,8 @@ private:
 	glm::vec2 _ClipSize;
 	glm::vec2 _Anchor;
 	glm::vec2 _CanvasSize;
+	std::string _EffectTechName;
+	std::string _EffectPassName;
+
+	UIRectBatchRender::RectRenderElementInCPU Element;
 };

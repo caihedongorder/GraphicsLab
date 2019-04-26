@@ -27,76 +27,27 @@ UIImageRender::~UIImageRender()
 	ReleaseCOM(mInputLayout);
 }
 
-void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, const UITransform& InTransform, 
+void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, const std::string& InEffectTechName, const std::string& InEffectPassName, 
+	const UITransform& InTransform,
 	const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor, const glm::vec2& InCanvasSize)
 {
 	int FrameSizeX = UISystem::GetInstance()->GetMainFrame()->GetSizeX();
 	int FrameSizeY = UISystem::GetInstance()->GetMainFrame()->GetSizeY();
 
+	Effect = InEffect;
+	_EffectTechName = InEffectTechName;
+	_EffectPassName = InEffectPassName;
 	_Transform = InTransform;
 	_Size = InSize;
 	_ClipSize = InClipSize;
 	_Anchor = InAnchor;
 	_CanvasSize = InCanvasSize;
-
-
-	FVectex Vertex[4];
-	GetVertexData(Vertex);
-	
-	D3D11_BUFFER_DESC vbd;
-	vbd.Usage = D3D11_USAGE_DYNAMIC;
-	vbd.ByteWidth = sizeof(FVectex) * 4;
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	vbd.MiscFlags = 0;
-	vbd.StructureByteStride = 0;
-	D3D11_SUBRESOURCE_DATA vinitData;
-	vinitData.pSysMem = Vertex;
-	HR(Ind3dDevice->CreateBuffer(&vbd, &vinitData, &mVB));
-
-
-	Effect = InEffect;
-
-	// Create the vertex input layout.
-	D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
-	{
-		{"CLIP", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"CW", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"LA", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"ROTATE", 0, DXGI_FORMAT_R32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-
-	mTech = Effect->GetTechniqueByName("BaseTech");
-
-	// Create the input layout
-	D3DX11_PASS_DESC passDesc;
-	mTech->GetPassByName("UI")->GetDesc(&passDesc);
-	HR(Ind3dDevice->CreateInputLayout(vertexDesc, sizeof(vertexDesc)/sizeof(vertexDesc[0]), passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
-void UIImageRender::OnRender(ID3D11DeviceContext* InD3dDeviceContext,LPCSTR strPassName)
+void UIImageRender::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
 {
-	InD3dDeviceContext->IASetInputLayout(mInputLayout);
-	InD3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	UINT stride = sizeof(FVectex);
-	UINT offset = 0;
-	InD3dDeviceContext->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
-
-
-	D3DX11_TECHNIQUE_DESC techDesc;
-	mTech->GetDesc(&techDesc);
-
-	if (auto pBasePass = mTech->GetPassByName(strPassName))
-	{
-		pBasePass->Apply(0, InD3dDeviceContext);
-
-		// 36 indices for the box.
-		InD3dDeviceContext->Draw(4, 0);
-	}
-
+	GetVertexData(Element.VertexData);
+	InUIRender->DrawInCPU(Effect,_EffectTechName.c_str(),_EffectPassName.c_str(),Element);
 }
 
 void UIImageRender::SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV)
@@ -133,31 +84,17 @@ void UIImageRender::ClearSRVs(ID3D11DeviceContext* InD3dDeviceContext, LPCSTR st
 void UIImageRender::PostRender(const UITransform& InTransform)
 {
 	_Transform = InTransform;
-
-	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	auto result = D3dDeviceContext->Map(mVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (SUCCEEDED(result))
-	{
-		FVectex Vertex[4];
-		GetVertexData(Vertex);
-
-		// Get a pointer to the data in the constant buffer.
-		auto dataPtr = (PerFrameData *)mappedResource.pData;
-
-		memcpy(mappedResource.pData, Vertex, sizeof(Vertex));
-
-		D3dDeviceContext->Unmap(mVB, 0);
-	}
 }
 
-void UIImageRender::GetVertexData(FVectex* OutVertexData)
+void UIImageRender::GetVertexData(UIRectBatchRender::FVectex* OutVertexData)
 {
 	const glm::vec2 UVs[] = {
 	{	glm::vec2(0.0,0.0f)	},
 	{	glm::vec2(0.0,1.0f)	},
 	{	glm::vec2(1.0,0.0f)	},
+	{	glm::vec2(1.0,0.0f)	},
 	{	glm::vec2(1.0,1.0f)	},
+	{	glm::vec2(0.0,1.0f)	},
 	};
 
 	glm::vec4 ParentClipRect = { 0,0,800,600 };
@@ -166,7 +103,7 @@ void UIImageRender::GetVertexData(FVectex* OutVertexData)
 	glm::vec4 IntersectedRect;
 	MathUtil::TwoRectIntersect(ParentClipRect, ClipRect, IntersectedRect);
 
-	for (int iVertexIdx = 0; iVertexIdx < 4; ++iVertexIdx)
+	for (int iVertexIdx = 0; iVertexIdx < 6; ++iVertexIdx)
 	{
 		OutVertexData[iVertexIdx].LocationAndAnchor.x = (UVs[iVertexIdx].x - _Anchor.x) * _Size.x;
 		OutVertexData[iVertexIdx].LocationAndAnchor.y = (UVs[iVertexIdx].y - _Anchor.y) * _Size.y;

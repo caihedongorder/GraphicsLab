@@ -18,6 +18,7 @@ UISystem::~UISystem()
 
 bool UISystem::Init()
 {
+	_UIRectBatchRender = std::make_shared<UIRectBatchRender>();
 	_MainFrame = std::shared_ptr<MainFrame>(new MainFrame(800,600));
 	auto Widget = _MainFrame->CreateWidget(EWidgetType_Panel, 0, 0, 800, 600, 800, 600);
 
@@ -56,15 +57,25 @@ UISystem* UISystem::GetInstance()
 
 void UISystem::OnRender(ID3D11DeviceContext* InD3dContext)
 {
-	_MainFrame->OnRender(InD3dContext);
+	_UIRectBatchRender->OnRender();
 }
 
 void UISystem::OnUpdate(float InDeltaTime)
 {
 	_MainFrame->OnUpdate(InDeltaTime);
+
+	_UIRectBatchRender->BeginDraw();
+	_MainFrame->OnRender(_UIRectBatchRender);
+	_UIRectBatchRender->EndDraw();
 }
 
 void UISystem::OnPostRender()
 {
 	_MainFrame->OnPostRender();
+	_UIRectBatchRender->PostRender();
+}
+
+void UISystem::DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const UIRectBatchRender::RectRenderElementInCPU& InElement)
+{
+	_UIRectBatchRender->DrawInCPU(InEffect, InTechName, InPassName, InElement);
 }
