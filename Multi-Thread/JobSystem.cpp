@@ -140,7 +140,7 @@ static void WorkingThreadProc(JobSystem::Context *jobCtx)
 	}
 }
 
-std::vector<std::thread> workers;
+std::vector<HANDLE> workers;
 JobSystem::Context* GJobContext = nullptr;
 JobSystem::Context * JobSystem::Init(int numWorkers, int numWorkersToSpawn, int maxJobsPerWorker)
 {
@@ -148,7 +148,9 @@ JobSystem::Context * JobSystem::Init(int numWorkers, int numWorkersToSpawn, int 
 	GJobContext = new Context(numWorkers, maxJobsPerWorker);
 
 	for (int iThread = 0; iThread < numWorkersToSpawn; iThread += 1) {
-		workers.push_back(std::thread(WorkingThreadProc, GJobContext));
+		DWORD ThreadID;
+		auto hThreadHandle = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WorkingThreadProc, (LPVOID)GJobContext, 0, &ThreadID);
+		workers.push_back(hThreadHandle);
 	}
 
 	initWorker(GJobContext);
@@ -158,9 +160,9 @@ JobSystem::Context * JobSystem::Init(int numWorkers, int numWorkersToSpawn, int 
 
 void JobSystem::UnInit()
 {
-	for (int iThread = 0; iThread < workers.size(); iThread += 1) {
-		workers[iThread].detach();
-	}
+// 	for (int iThread = 0; iThread < workers.size(); iThread += 1) {
+// 		workers[iThread].detach();
+// 	}
 
 // 	if (GJobContext)
 // 	{
@@ -254,6 +256,7 @@ void JobSystem::waitForJob(const JobSystem::Job *job)
 		if (nextJob) {
 			ExecuteJob(nextJob);
 		}
+		::Sleep(0);
 	}
 }
 

@@ -29,7 +29,7 @@ private:
 	virtual bool OnInit() { return true; }
 
 protected:
-	virtual void OnRender(std::shared_ptr<class UIRectBatchRender> InUIRender) {}
+	virtual void OnRender(class UIRectBatchRender* InUIRender) {}
 	virtual void OnUpdate(float InDeltaTime) {}
 	virtual void OnPostRender() {}
 

@@ -19,7 +19,7 @@ bool WidgetControlButton::OnInit()
 	return true;
 }
 
-void WidgetControlButton::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
+void WidgetControlButton::OnRender(class UIRectBatchRender* InUIRender)
 {
 	_uiRender->OnRender(InUIRender);
 }

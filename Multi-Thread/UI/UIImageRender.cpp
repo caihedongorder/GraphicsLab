@@ -44,7 +44,7 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, con
 	_CanvasSize = InCanvasSize;
 }
 
-void UIImageRender::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
+void UIImageRender::OnRender(UIRectBatchRender* InUIRender)
 {
 	GetVertexData(Element.VertexData);
 	InUIRender->DrawInCPU(Effect,_EffectTechName.c_str(),_EffectPassName.c_str(),Element);

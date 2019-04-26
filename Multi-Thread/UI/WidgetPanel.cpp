@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "WidgetPanel.h"
+#include "../JobSystem.h"
 
 void WidgetPanel::AddControl(std::shared_ptr<WidgetControlBase> InControl)
 {
@@ -11,19 +12,50 @@ bool WidgetPanel::OnInit()
 	return true;
 }
 
-void WidgetPanel::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
+void WidgetPanel::OnRender(class UIRectBatchRender* InUIRender)
 {
-	for (auto It = _Controls.begin() ; It != _Controls.end() ; ++It)
+	std::shared_ptr<WidgetControlBase>* pWidgetBase = &_Controls[0];
+	int Nums = _Controls.size();
+	if (false&&Nums > 100)
 	{
-		(*It)->OnRender(InUIRender);
+		auto pJob = JobSystem::createParallelForJob(pWidgetBase, Nums, nullptr, [InUIRender](std::shared_ptr<WidgetControlBase>* pWidgetBase, int Count, void * UserData) {
+			for (int i = 0; i < Count; ++i)
+			{
+				pWidgetBase[i]->OnRender(InUIRender);
+			}
+		}, 100, nullptr, [](void* pWidgetBase) {});
+		JobSystem::waitForJob(pJob);
+	}
+	else
+	{
+		for (auto It = _Controls.begin(); It != _Controls.end(); ++It)
+		{
+			(*It)->OnRender(InUIRender);
+		}
 	}
 }
 
 void WidgetPanel::OnUpdate(float InDeltaTime)
 {
-	for (auto It = _Controls.begin(); It != _Controls.end(); ++It)
+	std::shared_ptr<WidgetControlBase>* pWidgetBase = &_Controls[0];
+	int Nums = _Controls.size();
+
+	if ( Nums > 100)
 	{
-		(*It)->OnUpdate(InDeltaTime);
+		auto pJob = JobSystem::createParallelForJob(pWidgetBase, Nums, nullptr, [InDeltaTime](std::shared_ptr<WidgetControlBase>* pWidgetBase, int Count, void * UserData) {
+			for (int i = 0; i < Count; ++i)
+			{
+				pWidgetBase[i]->OnUpdate(InDeltaTime);
+			}
+		}, 100, nullptr, [](void* pWidgetBase) {});
+		JobSystem::waitForJob(pJob);
+	}
+	else
+	{
+		for (auto It = _Controls.begin(); It != _Controls.end(); ++It)
+		{
+			(*It)->OnUpdate(InDeltaTime);
+		}
 	}
 }
 

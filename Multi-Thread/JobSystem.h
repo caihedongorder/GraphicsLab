@@ -143,9 +143,12 @@ namespace JobSystem
 	Job *createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes);
 
 	template<typename OnFinishFunc>
-	Job *TCreateJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, OnFinishFunc InOnFinishEventFunc)
+	Job *TCreateJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, OnFinishFunc InOnFinishEventFunc,bool bEnqueue)
 	{
 		auto job = createJob(function, parent, embeddedData, embeddedDataBytes);
+
+		if (bEnqueue)
+			enqueueJob(job);
 
 		JobEventTrigger eventTrigger;
 		eventTrigger.job = job;
@@ -191,101 +194,51 @@ namespace JobSystem
 	}
 
 	template <typename T,typename Func, typename OnFinishFunction>
-	Job* createSimpleJob(T* data, Func InFunc, OnFinishFunction InOnFinishEventFunc,Job *parent = nullptr)
+	Job* createSimpleJob(T* data, Func InFunc, OnFinishFunction InOnFinishEventFunc, bool bEnqueue,Job *parent = nullptr)
 	{
 		typedef SimpleJobData<T,Func> JobData;
 		const JobData jobData(data, InFunc);
-		return TCreateJob(simpleJobFunc<JobData>, parent, &jobData, sizeof(jobData), InOnFinishEventFunc);
+		return TCreateJob(simpleJobFunc<JobData>, parent, &jobData, sizeof(jobData), InOnFinishEventFunc,bEnqueue);
 	}
 
-	template <typename T, typename S,typename Func>
-	struct ParallelForJobData {
-		typedef T DataType;
-		typedef S SplitterType;
-
-		ParallelForJobData(DataType* data, unsigned int count, void *userData, Func InFunc, const SplitterType& splitter)
-			: data(data)
-			, userData(userData)
-			, function(InFunc)
-			, splitter(splitter)
-			, count(count)
-		{
-		}
-
-		DataType* data;
-		void *userData;
-		Func function;
-		SplitterType splitter;
-		unsigned int count;
-	};
-	template <typename JobData>
-	void parallelForJobFunc(struct Job* job, const void* jobData) {
-		const JobData* data = static_cast<const JobData*>(jobData);
-		const JobData::SplitterType& splitter = data->splitter;
-		if (splitter.split<JobData::DataType>(data->count)) {
-#if 0
-			char szBuff[512];
-			sprintf_s(szBuff, 512, "parallelForJobFunc: Parent Addr:%x\n", data->data);
-			OutputDebugStringA(szBuff);
-#endif
-
-			// split in two
-			const unsigned int leftCount = data->count / 2U;
-			const JobData leftData(data->data + 0, leftCount, data->userData, data->function, splitter);
-			Job *leftJob = createJob(parallelForJobFunc<JobData>, job, &leftData, sizeof(leftData));
-			enqueueJob(leftJob);
-#if 0
-			sprintf_s(szBuff, 512, "parallelForJobFunc: leftJob Addr:%x\n", static_cast<const JobData*>(leftJob->data)->data);
-			OutputDebugStringA(szBuff);
-#endif
-
-			const unsigned int rightCount = data->count - leftCount;
-			const JobData rightData(data->data + leftCount, rightCount, data->userData, data->function, splitter);
-			Job *rightJob = createJob(parallelForJobFunc<JobData>, job, &rightData, sizeof(rightData));
-			enqueueJob(rightJob);
-
-#if 0
-			sprintf_s(szBuff, 512, "parallelForJobFunc: rightJob Addr:%x\n", static_cast<const JobData*>(rightJob->data)->data);
-			OutputDebugStringA(szBuff);
-#endif
-		}
-		else {
-			// execute the function on the range of data
-			(data->function)(data->data, data->count, data->userData);
-
-#if 0
-			char szBuff[512];
-			sprintf_s(szBuff, 512, "parallelForJobFunc: Execute Addr:%x\n", data->data);
-			OutputDebugStringA(szBuff);
-#endif
-		}
-	}
-
-	template <typename T, typename S, typename Func, typename OnFinishFunction>
-	Job* createParallelForJob(T* data, unsigned int count, void *userData, Func InFunc,
-		const S& splitter, Job *parent, OnFinishFunction InOnFinishEventFunc)
+	template <typename T, typename Func, typename OnFinishFunction>
+	Job* createParallelForJob(T* data, int count, void *userData, Func InFunc,int InNumsSplite , Job *parent, OnFinishFunction InOnFinishEventFunc)
 	{
-		typedef ParallelForJobData<T, S, Func> JobData;
-		const JobData jobData(data, count, userData, InFunc, splitter);
-		return TCreateJob(parallelForJobFunc<JobData>, parent, &jobData, sizeof(jobData), InOnFinishEventFunc);
+		if (count < InNumsSplite)
+		{
+			return createSimpleJob(data, [=](T* InData) {
+				return InFunc(InData, count, userData);
+			}, InOnFinishEventFunc,true,parent);
+		}
+		auto ParallelJob = createSimpleJob(data, [=](T* InData) {}, InOnFinishEventFunc,false, parent);
+		int SpliteCount = (count + InNumsSplite - 1) / InNumsSplite;
+		std::vector<Job*> AllSubJobs;
+		for (int SpliteIdx = 0 ; SpliteIdx < SpliteCount; ++SpliteIdx)
+		{
+			Job* pSpliteJob = nullptr;
+			if (SpliteIdx == SpliteCount -1)
+			{
+				pSpliteJob = createSimpleJob(data+ SpliteIdx* InNumsSplite, [=](T* InData) {
+					return InFunc(InData, count - SpliteIdx* InNumsSplite, userData);
+				}, InOnFinishEventFunc,false, ParallelJob);
+			}
+			else
+			{
+				pSpliteJob = createSimpleJob(data + SpliteIdx * InNumsSplite, [=](T* InData) {
+					return InFunc(InData, InNumsSplite, userData);
+				}, InOnFinishEventFunc, false, ParallelJob);
+			}
+
+			AllSubJobs.push_back(pSpliteJob);
+		}
+		enqueueJob(ParallelJob);
+		for (unsigned int iJboIdx = 0 ; iJboIdx < AllSubJobs.size() ; ++iJboIdx)
+		{
+			enqueueJob(AllSubJobs[iJboIdx]);
+		}
+
+		return ParallelJob;
 	}
-
-
-	class CountSplitter {
-	public:
-		explicit CountSplitter(unsigned int count) : m_count(count) {}
-		template <typename T> inline bool split(unsigned int count) const { return (count > m_count); }
-	private:
-		unsigned int m_count;
-	};
-
-	class DataSizeSplitter {
-	public:
-		explicit DataSizeSplitter(unsigned int size) : m_size(size) {}
-		template <typename T> inline bool split(unsigned int count) const { return (count * sizeof(T) > m_size); }
-	private:
-		unsigned int m_size;
-	};
 }
 #endif
 

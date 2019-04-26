@@ -25,7 +25,7 @@ bool UISystem::Init()
 	int StartPosX = 20;
 	int StartPosY = 20;
 
-	int Step = 30;
+	int Step = 10;
 	int CurrentPosX = StartPosX;
 	int CurrentPosY = StartPosY;
 	while (CurrentPosY < 600)
@@ -62,17 +62,17 @@ void UISystem::OnRender(ID3D11DeviceContext* InD3dContext)
 
 void UISystem::OnUpdate(float InDeltaTime)
 {
-	_MainFrame->OnUpdate(InDeltaTime);
-
-	_UIRectBatchRender->BeginDraw();
-	_MainFrame->OnRender(_UIRectBatchRender);
-	_UIRectBatchRender->EndDraw();
+ 	_MainFrame->OnUpdate(InDeltaTime);
+// 
+// 	_UIRectBatchRender->BeginDraw();
+// 	_MainFrame->OnRender(_UIRectBatchRender);
+// 	_UIRectBatchRender->EndDraw();
 }
 
 void UISystem::OnPostRender()
 {
-	_MainFrame->OnPostRender();
-	_UIRectBatchRender->PostRender();
+// 	_MainFrame->OnPostRender();
+// 	_UIRectBatchRender->PostRender();
 }
 
 void UISystem::DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const UIRectBatchRender::RectRenderElementInCPU& InElement)

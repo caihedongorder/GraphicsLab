@@ -18,7 +18,7 @@ public:
 		const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor
 		, const glm::vec2& InCanvasSize);
 
-	void OnRender(std::shared_ptr<UIRectBatchRender> InUIRender);
+	void OnRender(UIRectBatchRender* InUIRender);
 
 	void SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV);
 

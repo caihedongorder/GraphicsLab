@@ -2,6 +2,7 @@
 #include "MainFrame.h"
 #include "WidgetPanel.h"
 #include "WidgetControlButton.h"
+#include "../JobSystem.h"
 
 MainFrame::MainFrame(int InSizeX, int InSizeY)
 	:_SizeX(InSizeX)
@@ -39,18 +40,19 @@ void MainFrame::AddWidget(std::shared_ptr<WidgetBase> InWidget)
 
 void MainFrame::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
 {
+	UIRectBatchRender* pUIRender = InUIRender.get();
 	for (auto It(_Widgets.begin()); It != _Widgets.end(); ++It)
 	{
-		(*It)->OnRender(InUIRender);
+		(*It)->OnRender(pUIRender);
 	}
 }
 
 void MainFrame::OnUpdate(float InDeltaTime)
 {
-	for (auto It(_Widgets.begin());It != _Widgets.end();++It)
-	{
-		(*It)->OnUpdate(InDeltaTime);
-	}
+ 	for (auto It(_Widgets.begin());It != _Widgets.end();++It)
+ 	{
+ 		(*It)->OnUpdate(InDeltaTime);
+ 	}
 }
 
 void MainFrame::OnPostRender()
