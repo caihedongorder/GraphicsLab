@@ -13,10 +13,6 @@ extern std::shared_ptr<GraphSystem> GGraphSystem;
 
 
 UIImageRender::UIImageRender()
-	: mVB(NULL)
-	, Effect(NULL)
-	, mTech(NULL)
-	, mInputLayout(NULL)
 {
 
 }
@@ -24,15 +20,12 @@ UIImageRender::UIImageRender()
 
 UIImageRender::~UIImageRender()
 {
-	ReleaseCOM(mVB);
-	ReleaseCOM(mInputLayout);
 }
 
 void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, const std::string& InEffectTechName, const std::string& InEffectPassName, 
 	const UITransform& InTransform,
 	const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor, const glm::vec2& InCanvasSize)
 {
-	Effect = InEffect;
 	_EffectTechName = InEffectTechName;
 	_EffectPassName = InEffectPassName;
 	_Transform = InTransform;
@@ -46,37 +39,6 @@ void UIImageRender::OnRender(int InEffectIdx)
 {
 	GetVertexData(Element.VertexData);
 	GraphicsLabSystem::GetInstance()->GetUISystem()->GetUIRectBatchRender()->DrawInCPU(InEffectIdx,Element);
-}
-
-void UIImageRender::SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV)
-{
-	if (auto pVariable = Effect->GetVariableByName(strVarName))
-	{
-		if (auto pShaderResource = pVariable->AsShaderResource())
-		{
-			pShaderResource->SetResource(InSRV);
-		}
-	}
-}
-
-void UIImageRender::ClearSRVs(ID3D11DeviceContext* InD3dDeviceContext, LPCSTR strPassName, LPCSTR strVarNames[], int Count)
-{
-	if (auto pBasePass = mTech->GetPassByName(strPassName))
-	{
-
-		for (int iVar = 0; iVar < Count; ++iVar)
-		{
-			if (auto pVariable = Effect->GetVariableByName(strVarNames[iVar]))
-			{
-				if (auto pShaderResource = pVariable->AsShaderResource())
-				{
-					pShaderResource->SetResource(nullptr);
-				}
-			}
-		}
-
-		pBasePass->Apply(0, InD3dDeviceContext);
-	}
 }
 
 void UIImageRender::PostRender(const UITransform& InTransform)

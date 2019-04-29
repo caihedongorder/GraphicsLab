@@ -20,19 +20,11 @@ public:
 
 	void OnRender(int InEffectIdx);
 
-	void SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV);
-
-	void ClearSRVs(ID3D11DeviceContext* InD3dDeviceContext, LPCSTR strPassName, LPCSTR strVarNames[], int Count);
-
 	void PostRender(const UITransform& InTransform);
 
 private:
 	void GetVertexData(UIRectBatchRender::FVectex* OutVertexData);
 private:
-	ID3D11Buffer* mVB;
-	ID3D11InputLayout* mInputLayout;
-	ID3DX11Effect* Effect;
-	ID3DX11EffectTechnique* mTech;
 
 	UITransform _Transform;
 	glm::vec2 _Size;
