@@ -14,29 +14,6 @@ bool WidgetPanel::OnInit()
 	return true;
 }
 
-void WidgetPanel::OnRender(class UIRectBatchRender* InUIRender)
-{
-	std::shared_ptr<WidgetControlBase>* pWidgetBase = &_Controls[0];
-	int Nums = _Controls.size();
-	if (Nums > SpliteNums)
-	{
-		auto pJob = JobSystem::createParallelForJob(pWidgetBase, Nums, nullptr, [InUIRender](std::shared_ptr<WidgetControlBase>* pWidgetBase, int Count, void * UserData) {
-			for (int i = 0; i < Count; ++i)
-			{
-				pWidgetBase[i]->OnRender(InUIRender);
-			}
-		}, SpliteNums, nullptr, [](void* pWidgetBase) {});
-		JobSystem::waitForJob(pJob);
-	}
-	else
-	{
-		for (auto It = _Controls.begin(); It != _Controls.end(); ++It)
-		{
-			(*It)->OnRender(InUIRender);
-		}
-	}
-}
-
 void WidgetPanel::OnUpdate(float InDeltaTime)
 {
 	std::shared_ptr<WidgetControlBase>* pWidgetBase = &_Controls[0];
@@ -63,7 +40,6 @@ void WidgetPanel::OnUpdate(float InDeltaTime)
 
 void WidgetPanel::OnPostRender()
 {
-
 	std::shared_ptr<WidgetControlBase>* pWidgetBase = &_Controls[0];
 	int Nums = _Controls.size();
 

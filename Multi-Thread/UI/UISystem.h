@@ -23,6 +23,8 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
+	UIRectBatchRender* GetUIRectBatchRender() { return _UIRectBatchRender.get(); }
+
 private:
 	std::shared_ptr<MainFrame> _MainFrame;
 	std::shared_ptr<UIRectBatchRender> _UIRectBatchRender;

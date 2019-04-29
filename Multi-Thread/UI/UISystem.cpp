@@ -19,8 +19,9 @@ UISystem::~UISystem()
 bool UISystem::Init()
 {
 	_UIRectBatchRender = std::make_shared<UIRectBatchRender>();
+
 	_MainFrame = std::shared_ptr<MainFrame>(new MainFrame(800,600));
-	auto Widget = _MainFrame->CreateWidget(EWidgetType_Panel,_UIRectBatchRender.get(), 0, 0, 800, 600, 800, 600);
+	auto Widget = _MainFrame->CreateWidget(EWidgetType_Panel, 0, 0, 800, 600, 800, 600);
 
 	int StartPosX = 20;
 	int StartPosY = 20;
@@ -33,7 +34,7 @@ bool UISystem::Init()
 		CurrentPosX = StartPosX;
 		while (CurrentPosX < 800)
 		{
-			auto Button = _MainFrame->CreateWidget(EWidgetType_Button, _UIRectBatchRender.get(), CurrentPosX, CurrentPosY, 20, 20, 800, 600);
+			auto Button = _MainFrame->CreateWidget(EWidgetType_Button, CurrentPosX, CurrentPosY, 20, 20, 800, 600);
 			std::static_pointer_cast<WidgetPanel>(Widget)->AddControl(std::static_pointer_cast<WidgetControlBase>(Button));
 			CurrentPosX += Step;
 		}
@@ -64,8 +65,6 @@ void UISystem::OnRender(ID3D11DeviceContext* InD3dContext)
 void UISystem::OnUpdate(float InDeltaTime)
 {
  	_MainFrame->OnUpdate(InDeltaTime);
-// 
-	_MainFrame->OnRender(_UIRectBatchRender);
 }
 
 void UISystem::OnPostRender()

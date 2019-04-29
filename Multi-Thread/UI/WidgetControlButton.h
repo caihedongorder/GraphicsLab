@@ -11,10 +11,9 @@ private:
 	virtual EWidgetType GetWidgetType() final { return EWidgetType_Button; };
 
 private:
-	virtual bool OnInit(class UIRectBatchRender* InUIRender);
+	virtual bool OnInit();
 
 protected:
-	virtual void OnRender(class UIRectBatchRender* InUIRender);
 	virtual void OnUpdate(float InDeltaTime);
 	virtual void OnPostRender();
 private:

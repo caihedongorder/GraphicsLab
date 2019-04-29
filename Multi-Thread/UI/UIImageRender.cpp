@@ -44,10 +44,10 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, con
 	_CanvasSize = InCanvasSize;
 }
 
-void UIImageRender::OnRender(UIRectBatchRender* InUIRender, int InEffectIdx)
+void UIImageRender::OnRender(int InEffectIdx)
 {
 	GetVertexData(Element.VertexData);
-	InUIRender->DrawInCPU(InEffectIdx,Element);
+	UISystem::GetInstance()->GetUIRectBatchRender()->DrawInCPU(InEffectIdx,Element);
 }
 
 void UIImageRender::SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV)

@@ -23,8 +23,8 @@ WidgetBase::~WidgetBase()
 
 }
 
-bool WidgetBase::Init(class UIRectBatchRender* InUIRender)
+bool WidgetBase::Init()
 {
 
-	return OnInit(InUIRender);
+	return OnInit();
 }

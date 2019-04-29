@@ -4,11 +4,12 @@
 #include "../ShaderManager.h"
 #include "UIImageRender.h"
 #include <memory>
+#include "UISystem.h"
 
 extern std::shared_ptr<GraphSystem> GGraphSystem;
 
 
-bool WidgetControlButton::OnInit(class UIRectBatchRender* InUIRender)
+bool WidgetControlButton::OnInit()
 {
 	_uiRender = std::make_shared<UIImageRender>();
 
@@ -19,19 +20,17 @@ bool WidgetControlButton::OnInit(class UIRectBatchRender* InUIRender)
 	auto pEffect = ShaderManager::GetInstance()->GetShader(d3dDevice, TEXT("FX/UIImage.fx"));
 	auto pTech = pEffect->GetTechniqueByName("BaseTech");
 	auto pass = pTech->GetPassByName("UI");
-	InUIRender->RegisterEffect(pass, EffectIdx);
+	UISystem::GetInstance()->GetUIRectBatchRender()->RegisterEffect(pass, EffectIdx);
 
 	return EffectIdx != -1;
-}
-
-void WidgetControlButton::OnRender(class UIRectBatchRender* InUIRender)
-{
-	_uiRender->OnRender(InUIRender, EffectIdx);
 }
 
 void WidgetControlButton::OnUpdate(float InDeltaTime)
 {
 	_Transform.Angle += 1.0f * 0.1f;
+
+	_uiRender->OnRender(EffectIdx);
+
 }
 
 void WidgetControlButton::OnPostRender()

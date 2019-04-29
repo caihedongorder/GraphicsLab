@@ -16,7 +16,7 @@ MainFrame::~MainFrame()
 
 }
 
-std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, class UIRectBatchRender* InUIRender, int InPosX, int InPosY, int InSizeX, int InSizeY, int InCanvasSizeX, int InCanvasSizeY)
+std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, int InPosX, int InPosY, int InSizeX, int InSizeY, int InCanvasSizeX, int InCanvasSizeY)
 {
 	std::shared_ptr<WidgetBase> WidgetCreated;
 	if (InWidgetType == EWidgetType_Panel)
@@ -28,7 +28,7 @@ std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, cl
 		WidgetCreated = std::make_shared<WidgetControlButton>(InPosX, InPosY, InSizeX, InSizeY, InCanvasSizeX, InCanvasSizeY);
 	}
 
-	WidgetCreated->Init(InUIRender);
+	WidgetCreated->Init();
 
 	return WidgetCreated;
 }
@@ -36,15 +36,6 @@ std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, cl
 void MainFrame::AddWidget(std::shared_ptr<WidgetBase> InWidget)
 {
 	_Widgets.push_back(InWidget);
-}
-
-void MainFrame::OnRender(std::shared_ptr<UIRectBatchRender> InUIRender)
-{
-	UIRectBatchRender* pUIRender = InUIRender.get();
-	for (auto It(_Widgets.begin()); It != _Widgets.end(); ++It)
-	{
-		(*It)->OnRender(pUIRender);
-	}
 }
 
 void MainFrame::OnUpdate(float InDeltaTime)

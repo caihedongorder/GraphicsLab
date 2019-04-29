@@ -18,7 +18,6 @@ private:
 	virtual bool OnInit();
 
 protected:
-	virtual void OnRender(class UIRectBatchRender* InUIRender);
 	virtual void OnUpdate(float InDeltaTime);
 	virtual void OnPostRender();
 
