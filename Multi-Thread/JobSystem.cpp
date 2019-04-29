@@ -98,9 +98,9 @@ JobSystem::Context::~Context()
 }
 
 
-JobSystem::Job * GetJob(int InQueueIndex = 0)
+JobSystem::Job * GetJob(int iQueueIndex = 0)
 {
-	JobSystem::WorkStealingQueue *myQueue = tls_jobContext->m_workerJobQueues[InQueueIndex][tls_workerId];
+	JobSystem::WorkStealingQueue *myQueue = tls_jobContext->m_workerJobQueues[iQueueIndex][tls_workerId];
 	JobSystem::Job *job = myQueue->Pop();
 	if (!job) {
 		// this worker's queue is empty; try to steal a job from another thread
@@ -108,7 +108,7 @@ JobSystem::Job * GetJob(int InQueueIndex = 0)
 		//int victimIndex = (tls_workerId + victimOffset) % tls_jobContext->m_numWorkerThreads;
 		if (tls_workerId != JobSystem::ThreadType_MainThread)
 		{
-			JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[InQueueIndex][JobSystem::ThreadType_MainThread/*victimIndex*/];
+			JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[iQueueIndex][JobSystem::ThreadType_MainThread/*victimIndex*/];
 			job = victimQueue->Steal();
 			if (!job) { // nothing to steal
 				JOB_YIELD(); // TODO(cort): busy-wait bad, right? But there might be a job to steal in ANOTHER queue, so we should try again shortly.
@@ -126,9 +126,6 @@ JobSystem::ThreadId JobSystem::workerId(void)
 
 bool JobSystem::IsJobComplete(const Job *job)
 {
-	//InterlockedCompareExchange(&job->unfinishedJobs, 0, 0);
-	//auto unfinishedJobs = InterlockedCompareExchange(&job->unfinishedJobs, 0, 0);
-	//auto unfinishedJobs = InterlockedCompareExchange(&job->unfinishedJobs,0,0);
 	return (job->unfinishedJobs == 0);
 }
 
@@ -237,7 +234,7 @@ JobSystem::Job * JobSystem::AllocateJob(int iQueueIndex)
 	return &tls_jobPool[iQueueIndex][index & (tls_jobContext->m_maxJobsPerThread - 1)];
 }
 
-JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes)
+JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, int iQueueIndex)
 {
 	if (embeddedData != nullptr && embeddedDataBytes > kCdsJobPaddingBytes) {
 		assert(0);
@@ -246,7 +243,7 @@ JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const v
 	if (parent) {
 		parent->unfinishedJobs++;
 	}
-	Job *job = AllocateJob();
+	Job *job = AllocateJob(iQueueIndex);
 	job->function = function;
 	job->parent = parent;
 	job->unfinishedJobs = 1;

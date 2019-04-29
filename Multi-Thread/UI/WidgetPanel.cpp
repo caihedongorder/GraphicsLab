@@ -26,7 +26,7 @@ void WidgetPanel::OnUpdate(float InDeltaTime)
 			{
 				pWidgetBase[i]->OnUpdate(InDeltaTime);
 			}
-		}, SpliteNums, nullptr, [](void* pWidgetBase) {});
+		}, SpliteNums, nullptr, [](void* pWidgetBase) {},0);
 		JobSystem::waitForJob(pJob);
 	}
 	else
@@ -50,7 +50,7 @@ void WidgetPanel::OnPostRender()
 			{
 				pWidgetBase[i]->OnPostRender();
 			}
-		}, SpliteNums, nullptr, [](void* pWidgetBase) {});
+		}, SpliteNums, nullptr, [](void* pWidgetBase) {},0);
 		//JobSystem::waitForJob(pJob);
 	}
 	else

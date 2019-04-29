@@ -152,12 +152,12 @@ namespace JobSystem
 	static Job *AllocateJob(int iQueueIndex = 0);
 
 	// Called by worker threads to create a new job to execute. This function does *not* enqueue the new job for execution.
-	Job *createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes);
+	Job *createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, int iQueueIndex);
 
 	template<typename OnFinishFunc>
-	Job *TCreateJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, OnFinishFunc InOnFinishEventFunc,bool bEnqueue)
+	Job *TCreateJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes, OnFinishFunc InOnFinishEventFunc,bool bEnqueue, int iQueueIndex)
 	{
-		auto job = createJob(function, parent, embeddedData, embeddedDataBytes);
+		auto job = createJob(function, parent, embeddedData, embeddedDataBytes, iQueueIndex);
 
 		if (bEnqueue)
 			enqueueJob(job);
@@ -217,23 +217,23 @@ namespace JobSystem
 	}
 
 	template <typename T,typename Func, typename OnFinishFunction>
-	Job* createSimpleJob(T* data, Func InFunc, OnFinishFunction InOnFinishEventFunc, bool bEnqueue,Job *parent = nullptr)
+	Job* createSimpleJob(T* data, Func InFunc, OnFinishFunction InOnFinishEventFunc, bool bEnqueue, int iQueueIndex,Job *parent = nullptr)
 	{
 		typedef SimpleJobData<T,Func> JobData;
 		const JobData jobData(data, InFunc);
-		return TCreateJob(simpleJobFunc<JobData>, parent, &jobData, sizeof(jobData), InOnFinishEventFunc,bEnqueue);
+		return TCreateJob(simpleJobFunc<JobData>, parent, &jobData, sizeof(jobData), InOnFinishEventFunc,bEnqueue, iQueueIndex);
 	}
 
 	template <typename T, typename Func, typename OnFinishFunction>
-	Job* createParallelForJob(T* data, int count, void *userData, Func InFunc,int InNumsSplite , Job *parent, OnFinishFunction InOnFinishEventFunc)
+	Job* createParallelForJob(T* data, int count, void *userData, Func InFunc,int InNumsSplite , Job *parent, OnFinishFunction InOnFinishEventFunc,int iQueueIndex)
 	{
 		if (count < InNumsSplite)
 		{
 			return createSimpleJob(data, [=](T* InData) {
 				return InFunc(InData, count, userData);
-			}, InOnFinishEventFunc,true,parent);
+			}, InOnFinishEventFunc,true, iQueueIndex,parent);
 		}
-		auto ParallelJob = createSimpleJob(data, [=](T* InData) {}, InOnFinishEventFunc,false, parent);
+		auto ParallelJob = createSimpleJob(data, [=](T* InData) {}, InOnFinishEventFunc,false, iQueueIndex, parent);
 		int SpliteCount = (count + InNumsSplite - 1) / InNumsSplite;
 		std::vector<Job*> AllSubJobs;
 		for (int SpliteIdx = 0 ; SpliteIdx < SpliteCount; ++SpliteIdx)
@@ -243,21 +243,21 @@ namespace JobSystem
 			{
 				pSpliteJob = createSimpleJob(data+ SpliteIdx* InNumsSplite, [=](T* InData) {
 					return InFunc(InData, count - SpliteIdx* InNumsSplite, userData);
-				}, InOnFinishEventFunc,false, ParallelJob);
+				}, InOnFinishEventFunc,false, iQueueIndex, ParallelJob);
 			}
 			else
 			{
 				pSpliteJob = createSimpleJob(data + SpliteIdx * InNumsSplite, [=](T* InData) {
 					return InFunc(InData, InNumsSplite, userData);
-				}, InOnFinishEventFunc, false, ParallelJob);
+				}, InOnFinishEventFunc, false, iQueueIndex, ParallelJob);
 			}
 
 			AllSubJobs.push_back(pSpliteJob);
 		}
-		enqueueJob(ParallelJob);
+		enqueueJob(ParallelJob, iQueueIndex);
 		for (unsigned int iJboIdx = 0 ; iJboIdx < AllSubJobs.size() ; ++iJboIdx)
 		{
-			enqueueJob(AllSubJobs[iJboIdx]);
+			enqueueJob(AllSubJobs[iJboIdx], iQueueIndex);
 		}
 
 		return ParallelJob;
