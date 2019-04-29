@@ -57,7 +57,7 @@ UISystem* UISystem::GetInstance()
 	return &_sInst;
 }
 
-void UISystem::OnRender(ID3D11DeviceContext* InD3dContext)
+void UISystem::OnRender()
 {
 	_UIRectBatchRender->OnRender();
 }

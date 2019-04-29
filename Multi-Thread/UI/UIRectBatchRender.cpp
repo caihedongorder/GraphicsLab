@@ -8,8 +8,7 @@
 #include "UISystem.h"
 #include "../MathUtil.h"
 #include <memory>
-
-extern std::shared_ptr<GraphSystem> GGraphSystem;
+#include "../GraphicsLabSystem.h"
 
 UIRectBatchRender::RectRenderEffectInfo::RectRenderEffectInfo(ID3DX11EffectPass* InPass, int InIndex) :Pass(InPass)
 , index(InIndex)
@@ -31,7 +30,7 @@ UIRectBatchRender::RectRenderEffectInfo::RectRenderEffectInfo(ID3DX11EffectPass*
 	// Create the input layout
 	D3DX11_PASS_DESC passDesc;
 	InPass->GetDesc(&passDesc);
-	HR(GGraphSystem->GetD3dDevice()->CreateInputLayout(vertexDesc, sizeof(vertexDesc) / sizeof(vertexDesc[0]), passDesc.pIAInputSignature,
+	HR(GraphicsLabSystem::GetInstance()->GetGraphSystem()->GetD3dDevice()->CreateInputLayout(vertexDesc, sizeof(vertexDesc) / sizeof(vertexDesc[0]), passDesc.pIAInputSignature,
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
@@ -77,7 +76,7 @@ void UIRectBatchRender::CreateInputLayout(ID3D11Device* Ind3dDevice, ID3DX11Effe
 
 void UIRectBatchRender::OnRender()
 {
-	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
+	auto D3dDeviceContext = GraphicsLabSystem::GetInstance()->GetGraphSystem()->GetD3dDeviceContext();
 	//渲染
 	for (auto EffectIt = _EffectInfos.begin(); EffectIt != _EffectInfos.end(); ++EffectIt)
 	{
@@ -103,7 +102,7 @@ void UIRectBatchRender::DrawInCPU(int InEffectIdx,const RectRenderElementInCPU& 
 
 void UIRectBatchRender::PostRender()
 {
-	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
+	auto D3dDeviceContext = GraphicsLabSystem::GetInstance()->GetGraphSystem()->GetD3dDeviceContext();
 
 	//cpu数据 同步到 gpu 
 	for (auto EffectIt = _EffectInfos.begin() ; EffectIt != _EffectInfos.end() ; ++EffectIt)
@@ -124,7 +123,7 @@ void UIRectBatchRender::PostRender()
 			vbd.StructureByteStride = 0;
 			D3D11_SUBRESOURCE_DATA vinitData;
 			vinitData.pSysMem = pEffectInfo->RenderElementMemoryPool.GetBasePtr();
-			HR(GGraphSystem->GetD3dDevice()->CreateBuffer(&vbd, &vinitData, &pEffectInfo->mVB));
+			HR(GraphicsLabSystem::GetInstance()->GetGraphSystem()->GetD3dDevice()->CreateBuffer(&vbd, &vinitData, &pEffectInfo->mVB));
 
 			pEffectInfo->VertexCount = VertexCount;
 		}

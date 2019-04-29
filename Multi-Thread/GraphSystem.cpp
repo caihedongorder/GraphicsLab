@@ -369,7 +369,7 @@ void GraphSystem::OnRender()
 		OnForwardRender();
 	}
 
-	UISystem::GetInstance()->OnRender(md3dImmediateContext);
+	UISystem::GetInstance()->OnRender();
 
 
 	HR(mSwapChain->Present(0, 0));

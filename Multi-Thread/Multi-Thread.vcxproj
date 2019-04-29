@@ -230,6 +230,7 @@
     <ClInclude Include="FramePerSecond.h" />
     <ClInclude Include="FullScreenRenderData.h" />
     <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="GraphicsLabSystem.h" />
     <ClInclude Include="GraphSystem.h" />
     <ClInclude Include="JobSystem.h" />
     <ClInclude Include="GraphicsLab.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="FramePerSecond.cpp" />
     <ClCompile Include="FullScreenRenderData.cpp" />
     <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="GraphicsLabSystem.cpp" />
     <ClCompile Include="GraphSystem.cpp" />
     <ClCompile Include="JobSystem.cpp" />
     <ClCompile Include="main.cpp" />

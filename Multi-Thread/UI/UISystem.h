@@ -16,7 +16,7 @@ public:
 
 	static UISystem* GetInstance();
 
-	void OnRender(ID3D11DeviceContext* InD3dContext);
+	void OnRender();
 	void OnUpdate(float InDeltaTime);
 	void OnPostRender();
 
