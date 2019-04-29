@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "WidgetPanel.h"
 #include "../JobSystem.h"
+#include "../GraphicsLabSystem.h"
 
 static int SpliteNums = 100;
 
@@ -26,8 +27,9 @@ void WidgetPanel::OnUpdate(float InDeltaTime)
 			{
 				pWidgetBase[i]->OnUpdate(InDeltaTime);
 			}
-		}, SpliteNums, nullptr, [](void* pWidgetBase) {},0);
-		JobSystem::waitForJob(pJob);
+		}, SpliteNums, GraphicsLabSystem::GetInstance()->GetFrameJob(), [](void* pWidgetBase) {},0);
+		//JobSystem::waitForJob(pJob);
+
 	}
 	else
 	{
@@ -50,7 +52,7 @@ void WidgetPanel::OnPostRender()
 			{
 				pWidgetBase[i]->OnPostRender();
 			}
-		}, SpliteNums, nullptr, [](void* pWidgetBase) {},0);
+		}, SpliteNums, GraphicsLabSystem::GetInstance()->GetFrameJob(), [](void* pWidgetBase) {},1);
 		//JobSystem::waitForJob(pJob);
 	}
 	else

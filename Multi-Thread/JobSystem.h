@@ -20,7 +20,7 @@ OnFinishEventFunc defineFinishEvent(lambdaFunc InFunc) {
 namespace JobSystem
 {
 	#define kCdsJobCacheLineBytes 64
-	#define kCdsJobPaddingBytes ( (kCdsJobCacheLineBytes) - (sizeof(JobFunction) + sizeof(struct Job*) + sizeof(void*) + sizeof(std::atomic_int_fast32_t)) )
+	#define kCdsJobPaddingBytes ( (kCdsJobCacheLineBytes) - (sizeof(JobFunction) + sizeof(struct Job*) + sizeof(void*) + sizeof(LONG) + sizeof(int)) )
 
 	#ifdef _MSC_VER
 	#   define JOB_ATTR_ALIGN(alignment) __declspec(align(alignment))
@@ -66,6 +66,7 @@ namespace JobSystem
 		struct Job *parent;
 		void *data;
 		volatile LONG unfinishedJobs;
+		volatile int QueneIndex;
 		char padding[kCdsJobPaddingBytes];
 	} Job;
 
@@ -99,7 +100,6 @@ namespace JobSystem
 		std::shared_ptr<OnFinishEventWrapperBase> _OnFinishEventWrapperBase;
 	};
 	extern JOB_SYSTEM_THREADLOCAL std::list<JobEventTrigger> tls_jobEventTriggers;
-	extern LONG GJobCount;
 
 	class WorkStealingQueue {
 	public:
@@ -160,7 +160,7 @@ namespace JobSystem
 		auto job = createJob(function, parent, embeddedData, embeddedDataBytes, iQueueIndex);
 
 		if (bEnqueue)
-			enqueueJob(job);
+			enqueueJob(job,iQueueIndex);
 
 		JobEventTrigger eventTrigger;
 		eventTrigger.job = job;
@@ -173,7 +173,7 @@ namespace JobSystem
 
 	// Called by worker threads to enqueue a job for execution. This gives the next available thread permission to execute this
 	// job. All prior dependencies must be complete before a job is enqueued.
-	int enqueueJob(Job *job, int iQueueIndex = 0);
+	int enqueueJob(Job *job, int iQueueIndex);
 
 	// Fetch and run any available queued jobs until the specified job is complete.
 	void waitForJob(const Job *job);

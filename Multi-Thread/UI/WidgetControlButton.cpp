@@ -29,9 +29,19 @@ void WidgetControlButton::OnUpdate(float InDeltaTime)
 
 	_uiRender->OnRender(EffectIdx);
 
+#if 0
+	char szBuff[512];
+	sprintf_s(szBuff, 512, "WidgetControlButton::OnUpdate\r\n");
+	OutputDebugStringA(szBuff);
+#endif
 }
 
 void WidgetControlButton::OnPostRender()
 {
 	_uiRender->PostRender(_Transform);
+#if 0
+	char szBuff[512];
+	sprintf_s(szBuff, 512, "WidgetControlButton::OnPostRender\r\n");
+	OutputDebugStringA(szBuff);
+#endif
 }

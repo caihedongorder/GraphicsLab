@@ -64,7 +64,7 @@ void GraphicsLabSystem::Update()
 
 	_UISystem->BeginFrame();
 
-	_FrameUpdateJob = JobSystem::createSimpleJob<void>(nullptr, [](void* data) {}, [](void* data) {},true,0);
+	_FrameUpdateJob = JobSystem::createSimpleJob<void>(nullptr, [](void* data) {}, [](void* data) {},true,1);
 
 	//开始渲染上一帧数据
 	_GraphSystem->BeginRender();
@@ -81,10 +81,9 @@ void GraphicsLabSystem::Update()
 	//等待渲染完成
 	_GraphSystem->WaitforFinishRender();
 
-	_UISystem->OnPostRender();
-
 	JobSystem::waitForJob(_FrameUpdateJob);
 
+	_UISystem->OnPostRender();
 
 	_UISystem->EndFrame();
 

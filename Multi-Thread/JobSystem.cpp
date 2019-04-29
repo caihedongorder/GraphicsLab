@@ -19,12 +19,14 @@ static_assert((sizeof(struct JobSystem::Job) % kCdsJobCacheLineBytes) == 0, "Job
 
 
 static JOB_SYSTEM_THREADLOCAL JobSystem::Context *tls_jobContext = nullptr;
-static JOB_SYSTEM_THREADLOCAL uint64_t tls_jobCount = 0;
+static JOB_SYSTEM_THREADLOCAL uint64_t tls_jobCount[2];
 static JOB_SYSTEM_THREADLOCAL JobSystem::ThreadId tls_workerId;
 static JOB_SYSTEM_THREADLOCAL JobSystem::Job *tls_jobPool[2];
 JOB_SYSTEM_THREADLOCAL std::list<JobSystem::JobEventTrigger> JobSystem::tls_jobEventTriggers;
 
-static LONG JobSystem::GJobCount = 0;
+static volatile LONG JobCountInQueues[2];
+
+
 static JobSystem::Context* GJobContext = nullptr;
 size_t jobPoolBufferSizePerQueue = 0;
 
@@ -42,9 +44,6 @@ static inline uint32_t nextPowerOfTwo(uint32_t x)
 
 static void FinishJob(JobSystem::Job *job) {
 	LONG unfinishedJobs = InterlockedDecrement(&job->unfinishedJobs);
-
-	InterlockedDecrement(&JobSystem::GJobCount);
-
 	assert(unfinishedJobs >= 0);
 	if (unfinishedJobs == 0 && job->parent) {
 		FinishJob(job->parent);
@@ -66,6 +65,8 @@ JobSystem::Context::Context(int numWorkerThreads, int maxJobsPerThread)
 
 	for (int iQueueIndex = 0 ; iQueueIndex < 2 ; ++iQueueIndex)
 	{
+		JobCountInQueues[iQueueIndex] = 0;
+
 		m_workerJobQueues[iQueueIndex] = new JobSystem::WorkStealingQueue*[numWorkerThreads];
 		size_t queueBufferSize = JobSystem::WorkStealingQueue::BufferSize(maxJobsPerThread);
 		m_queueEntryBuffer[iQueueIndex] = malloc(queueBufferSize * numWorkerThreads);
@@ -98,7 +99,7 @@ JobSystem::Context::~Context()
 }
 
 
-JobSystem::Job * GetJob(int iQueueIndex = 0)
+JobSystem::Job * GetJob(int iQueueIndex)
 {
 	JobSystem::WorkStealingQueue *myQueue = tls_jobContext->m_workerJobQueues[iQueueIndex][tls_workerId];
 	JobSystem::Job *job = myQueue->Pop();
@@ -135,6 +136,15 @@ static void ExecuteJob(JobSystem::Job *job)
 {
 	(job->function)(job, job->data);
 	FinishJob(job);
+
+	InterlockedDecrement(&JobCountInQueues[job->QueneIndex]);
+	assert(JobCountInQueues[job->QueneIndex] >= 0);
+
+#if 0
+	char szBuff[512];
+	sprintf_s(szBuff, 512, "Job Complete Quene Index : %d\r\n", job->QueneIndex);
+	OutputDebugStringA(szBuff);
+#endif
 }
 
 static void WorkingThreadProc(JobSystem::ThreadId InThreadType)
@@ -142,7 +152,17 @@ static void WorkingThreadProc(JobSystem::ThreadId InThreadType)
 	int workerId = JobSystem::initWorker(InThreadType,GJobContext);
 	while (true)
 	{
-		if (auto pJob = GetJob())
+		JobSystem::Job *pJob = nullptr;
+		if (JobCountInQueues[0] > 0)
+		{
+			pJob = GetJob(0);
+		}
+		else if(JobCountInQueues[1] > 0)
+		{
+			pJob = GetJob(1);
+		}
+		
+		if (pJob)
 		{
 			ExecuteJob(pJob);
 		}
@@ -216,9 +236,11 @@ void JobSystem::Update()
 
 int JobSystem::initWorker(ThreadId InThreadType,Context *ctx)
 {
-	tls_jobContext = ctx;
-	tls_jobCount = 0;
 	tls_workerId = InThreadType;
+
+	tls_jobContext = ctx;
+	tls_jobCount[0] = 0;
+	tls_jobCount[1] = 0;
 	assert(tls_workerId < ctx->m_numWorkerThreads);
 	void *jobPoolBufferAligned = (void*)((uintptr_t(ctx->m_jobPoolBuffer) + kCdsJobCacheLineBytes - 1) & ~(kCdsJobCacheLineBytes - 1));
 	assert((uintptr_t(jobPoolBufferAligned) % kCdsJobCacheLineBytes) == 0);
@@ -230,7 +252,7 @@ int JobSystem::initWorker(ThreadId InThreadType,Context *ctx)
 JobSystem::Job * JobSystem::AllocateJob(int iQueueIndex)
 {
 	// TODO(cort): no protection against over-allocation
-	uint64_t index = tls_jobCount++;
+	uint64_t index = tls_jobCount[iQueueIndex]++;
 	return &tls_jobPool[iQueueIndex][index & (tls_jobContext->m_maxJobsPerThread - 1)];
 }
 
@@ -240,10 +262,15 @@ JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const v
 		assert(0);
 		return NULL;
 	}
-	if (parent) {
-		parent->unfinishedJobs++;
+	Job* currentParent = parent;
+
+	if (parent)
+	{
+		InterlockedIncrement(&parent->unfinishedJobs);
 	}
+
 	Job *job = AllocateJob(iQueueIndex);
+	job->QueneIndex = iQueueIndex;
 	job->function = function;
 	job->parent = parent;
 	job->unfinishedJobs = 1;
@@ -262,18 +289,14 @@ JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const v
 int JobSystem::enqueueJob(JobSystem::Job *job,int iQueueIndex)
 {
 	int pushError = tls_jobContext->m_workerJobQueues[iQueueIndex][tls_workerId]->Push(job);
-
-	{
-		LONG jobCount = GJobCount;
-		InterlockedIncrement(&GJobCount);
-	}
+	InterlockedIncrement(&JobCountInQueues[iQueueIndex]);
 	return pushError;
 }
 
 void JobSystem::waitForJob(const JobSystem::Job *job)
 {
 	while (!JobSystem::IsJobComplete(job)) {
-		Job *nextJob = GetJob();
+		Job *nextJob = GetJob(0);
 		if (nextJob) {
 			ExecuteJob(nextJob);
 		}

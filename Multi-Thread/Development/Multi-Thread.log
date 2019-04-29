@@ -1,16 +1,5 @@
-﻿  FramePerSecond.cpp
-  GameTimer.cpp
-  GraphicsLabSystem.cpp
-  GraphSystem.cpp
-  JobSystem.cpp
-  main.cpp
-  MainFrame.cpp
-  UIRectBatchRender.cpp
-  UIImageRender.cpp
+﻿  GraphicsLabSystem.cpp
   UISystem.cpp
-  WidgetBase.cpp
-  WidgetControlBase.cpp
   WidgetControlButton.cpp
-  WidgetPanel.cpp
   Generating Code...
   Multi-Thread.vcxproj -> D:\Multi-Thread\Multi-Thread\\Multi-Thread\GraphicsLab.exe
