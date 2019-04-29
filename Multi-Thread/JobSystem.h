@@ -172,7 +172,7 @@ namespace JobSystem
 
 	// Called by worker threads to enqueue a job for execution. This gives the next available thread permission to execute this
 	// job. All prior dependencies must be complete before a job is enqueued.
-	int enqueueJob(Job *job);
+	int enqueueJob(Job *job, int iQueueIndex = 1);
 
 	// Fetch and run any available queued jobs until the specified job is complete.
 	void waitForJob(const Job *job);

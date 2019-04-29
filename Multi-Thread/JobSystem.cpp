@@ -67,40 +67,43 @@ JobSystem::Context::Context(int numWorkerThreads, int maxJobsPerThread)
 	maxJobsPerThread = nextPowerOfTwo(maxJobsPerThread);
 	m_maxJobsPerThread = maxJobsPerThread;
 
-	m_workerJobQueues[1] = nullptr;
-	m_queueEntryBuffer[1] = nullptr;
-	m_jobPoolBuffer[1] = nullptr;
-
-	m_workerJobQueues[0] = new JobSystem::WorkStealingQueue*[numWorkerThreads];
-	const size_t jobPoolBufferSize = numWorkerThreads * maxJobsPerThread * sizeof(Job) + kCdsJobCacheLineBytes - 1;
-	m_jobPoolBuffer[0] = malloc(jobPoolBufferSize);
-	size_t queueBufferSize = JobSystem::WorkStealingQueue::BufferSize(maxJobsPerThread);
-	m_queueEntryBuffer[0] = malloc(queueBufferSize * numWorkerThreads);
-	for (int iWorker = 0; iWorker < numWorkerThreads; ++iWorker)
+	for (int iQueueIndex = 0 ; iQueueIndex < 2 ; ++iQueueIndex)
 	{
-		m_workerJobQueues[0][iWorker] = new JobSystem::WorkStealingQueue();
-		int initError = m_workerJobQueues[0][iWorker]->Init(
-			maxJobsPerThread,
-			(void*)(intptr_t(m_queueEntryBuffer[0]) + iWorker * queueBufferSize),
-			queueBufferSize);
-		(void)initError;
-		assert(initError == 0);
+		m_workerJobQueues[iQueueIndex] = new JobSystem::WorkStealingQueue*[numWorkerThreads];
+		const size_t jobPoolBufferSize = numWorkerThreads * maxJobsPerThread * sizeof(Job) + kCdsJobCacheLineBytes - 1;
+		m_jobPoolBuffer[iQueueIndex] = malloc(jobPoolBufferSize);
+		size_t queueBufferSize = JobSystem::WorkStealingQueue::BufferSize(maxJobsPerThread);
+		m_queueEntryBuffer[iQueueIndex] = malloc(queueBufferSize * numWorkerThreads);
+		for (int iWorker = 0; iWorker < numWorkerThreads; ++iWorker)
+		{
+			m_workerJobQueues[iQueueIndex][iWorker] = new JobSystem::WorkStealingQueue();
+			int initError = m_workerJobQueues[iQueueIndex][iWorker]->Init(
+				maxJobsPerThread,
+				(void*)(intptr_t(m_queueEntryBuffer[iQueueIndex]) + iWorker * queueBufferSize),
+				queueBufferSize);
+			(void)initError;
+			assert(initError == 0);
+		}
 	}
+	
 }
 
 JobSystem::Context::~Context()
 {
-	for (int iWorker = 0; iWorker < m_numWorkerThreads; ++iWorker)
+	for (int iQueueIndex = 0; iQueueIndex < 2; ++iQueueIndex)
 	{
-		delete m_workerJobQueues[0][iWorker];
+		for (int iWorker = 0; iWorker < m_numWorkerThreads; ++iWorker)
+		{
+			delete m_workerJobQueues[iQueueIndex][iWorker];
+		}
+		delete[] m_workerJobQueues[iQueueIndex];
+		free(m_queueEntryBuffer[iQueueIndex]);
+		free(m_jobPoolBuffer[iQueueIndex]);
 	}
-	delete[] m_workerJobQueues[0];
-	free(m_queueEntryBuffer[0]);
-	free(m_jobPoolBuffer[0]);
 }
 
 
-JobSystem::Job * GetJob(int InQueueIndex = 0)
+JobSystem::Job * GetJob(int InQueueIndex = 1)
 {
 	JobSystem::WorkStealingQueue *myQueue = tls_jobContext->m_workerJobQueues[InQueueIndex][tls_workerId];
 	JobSystem::Job *job = myQueue->Pop();
@@ -110,7 +113,7 @@ JobSystem::Job * GetJob(int InQueueIndex = 0)
 		//int victimIndex = (tls_workerId + victimOffset) % tls_jobContext->m_numWorkerThreads;
 		if (tls_workerId != JobSystem::ThreadType_MainThread)
 		{
-			JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[0][JobSystem::ThreadType_MainThread/*victimIndex*/];
+			JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[InQueueIndex][JobSystem::ThreadType_MainThread/*victimIndex*/];
 			job = victimQueue->Steal();
 			if (!job) { // nothing to steal
 				JOB_YIELD(); // TODO(cort): busy-wait bad, right? But there might be a job to steal in ANOTHER queue, so we should try again shortly.
@@ -277,9 +280,9 @@ JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const v
 	return job;
 }
 
-int JobSystem::enqueueJob(JobSystem::Job *job)
+int JobSystem::enqueueJob(JobSystem::Job *job,int iQueueIndex)
 {
-	int pushError = tls_jobContext->m_workerJobQueues[0][tls_workerId]->Push(job);
+	int pushError = tls_jobContext->m_workerJobQueues[iQueueIndex][tls_workerId]->Push(job);
 
 	{
 		LONG jobCount = GJobCount;
