@@ -8,7 +8,7 @@
 extern std::shared_ptr<GraphSystem> GGraphSystem;
 
 
-bool WidgetControlButton::OnInit()
+bool WidgetControlButton::OnInit(class UIRectBatchRender* InUIRender)
 {
 	_uiRender = std::make_shared<UIImageRender>();
 
@@ -16,12 +16,17 @@ bool WidgetControlButton::OnInit()
 	_uiRender->Init(d3dDevice, ShaderManager::GetInstance()->GetShader(d3dDevice, TEXT("FX/UIImage.fx")),"BaseTech","UI", _Transform,
 		{ _SizeX,_SizeY }, { _ClipSizeX,_ClipSizeY }, {_AnchorX,_AnchorY}, { _CanvasSizeX,_CanvasSizeY });
 
-	return true;
+	auto pEffect = ShaderManager::GetInstance()->GetShader(d3dDevice, TEXT("FX/UIImage.fx"));
+	auto pTech = pEffect->GetTechniqueByName("BaseTech");
+	auto pass = pTech->GetPassByName("UI");
+	InUIRender->RegisterEffect(pass, EffectIdx);
+
+	return EffectIdx != -1;
 }
 
 void WidgetControlButton::OnRender(class UIRectBatchRender* InUIRender)
 {
-	_uiRender->OnRender(InUIRender);
+	_uiRender->OnRender(InUIRender, EffectIdx);
 }
 
 void WidgetControlButton::OnUpdate(float InDeltaTime)

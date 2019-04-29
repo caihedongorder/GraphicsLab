@@ -2,7 +2,7 @@
 #include "WidgetPanel.h"
 #include "../JobSystem.h"
 
-static int SpliteNums = 1000;
+static int SpliteNums = 100;
 
 void WidgetPanel::AddControl(std::shared_ptr<WidgetControlBase> InControl)
 {

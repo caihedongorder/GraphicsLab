@@ -15,7 +15,7 @@ public:
 	virtual int GetSizeX()  final { return _SizeX; };
 	virtual int GetSizeY() final { return _SizeY; };
 
-	static std::shared_ptr<WidgetBase> CreateWidget(EWidgetType InWidgetType,int InPosX,int InPosY,int InSizeX,int InSizeY,int InCanvasSizeX,int InCanvasSizeY);
+	static std::shared_ptr<WidgetBase> CreateWidget(EWidgetType InWidgetType, class UIRectBatchRender* InUIRender,int InPosX,int InPosY,int InSizeX,int InSizeY,int InCanvasSizeX,int InCanvasSizeY);
 	void AddWidget(std::shared_ptr<WidgetBase> InWidget);
 
 private:

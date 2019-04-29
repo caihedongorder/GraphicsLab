@@ -7,7 +7,10 @@
 #include "UITransform.h"
 #include <map>
 #include <vector>
+#include <memory>
+
 #include "../CriticalSection.h"
+#include "../LockFreeMemoryPool.h"
 
 class UIRectBatchRender
 {
@@ -26,43 +29,39 @@ public:
 		FVectex VertexData[6];
 	};
 
-	class RectRenderElementInGPU
+	class RectRenderEffectInfo
 	{
 	public:
-		RectRenderElementInGPU();
-		~RectRenderElementInGPU();
-		int VectexCount = 0;
-		ID3D11Buffer* mVB = nullptr;
-		ID3D11InputLayout* mInputLayout = nullptr;
+		RectRenderEffectInfo(ID3DX11EffectPass* InPass, int InIndex);
+		~RectRenderEffectInfo();
+		ID3DX11EffectPass* Pass;
+		int VertexCount;
+		ID3D11Buffer* mVB;
+		ID3D11InputLayout* mInputLayout;
+		int index;
+		TLockFreeMemoryPool<RectRenderElementInCPU> RenderElementMemoryPool;
 	};
+	
 public:
 	UIRectBatchRender();
 	~UIRectBatchRender();
 
 	void OnRender();
 
-	void DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const RectRenderElementInCPU& InElement);
+	void DrawInCPU(int InEffectIdx, const RectRenderElementInCPU& InElement);
 
 	void PostRender();
 
-	void BeginDraw();
-	void EndDraw();
+	void BeginFrame();
+	void EndFrame();
+
+	void RegisterEffect(ID3DX11EffectPass* InPass, int& OutEffectIndex);
+
 
 private:
 	void CreateInputLayout(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, ID3D11InputLayout*& OutInputLayout);
 private:
 
-	typedef std::multimap<std::string, std::vector<RectRenderElementInCPU>> PassName2RenderElementsInCPU;
-	typedef std::multimap<std::string, PassName2RenderElementsInCPU> TechName2PassRenderCollectionsInCPU;
-	typedef std::multimap<ID3DX11Effect*, TechName2PassRenderCollectionsInCPU> Effect2TechRenderCollectionsInCPU;
-
-	Effect2TechRenderCollectionsInCPU AllBatchElementsInCPU;
-
-	typedef std::multimap<std::string, RectRenderElementInGPU> PassName2RenderElementsInGPU;
-	typedef std::multimap<std::string, PassName2RenderElementsInGPU> TechName2PassRenderCollectionsInGPU;
-	typedef std::multimap<ID3DX11Effect*, TechName2PassRenderCollectionsInGPU> Effect2TechRenderCollectionsInGPU;
-
-	Effect2TechRenderCollectionsInGPU AllBatchElementsInGPU;
-
-	FCriticalSection CriticalSection;
+	TLockFreeMemoryPool<LONG> _RenderEffectIdxMemoryPool;
+	std::vector<std::shared_ptr<RectRenderEffectInfo>> _EffectInfos;
 };

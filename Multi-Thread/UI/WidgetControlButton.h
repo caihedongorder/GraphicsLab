@@ -11,7 +11,7 @@ private:
 	virtual EWidgetType GetWidgetType() final { return EWidgetType_Button; };
 
 private:
-	virtual bool OnInit();
+	virtual bool OnInit(class UIRectBatchRender* InUIRender);
 
 protected:
 	virtual void OnRender(class UIRectBatchRender* InUIRender);
@@ -19,5 +19,6 @@ protected:
 	virtual void OnPostRender();
 private:
 	std::shared_ptr<UIImageRender> _uiRender;
+	int EffectIdx = -1;
 };
 

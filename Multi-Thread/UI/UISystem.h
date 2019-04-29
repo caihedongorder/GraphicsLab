@@ -20,8 +20,8 @@ public:
 	void OnUpdate(float InDeltaTime);
 	void OnPostRender();
 
-	void DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const UIRectBatchRender::RectRenderElementInCPU& InElement);
-
+	void BeginFrame();
+	void EndFrame();
 
 private:
 	std::shared_ptr<MainFrame> _MainFrame;

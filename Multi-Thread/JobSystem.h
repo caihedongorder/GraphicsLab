@@ -45,6 +45,17 @@ namespace JobSystem
 	#   endif
 	#endif
 
+	enum ThreadId
+	{
+		ThreadType_MainThread,
+		ThreadType_MaxProduceThread,
+
+		ThreadType_WorkingThread1 = ThreadType_MaxProduceThread,
+		ThreadType_WorkingThread2,
+		ThreadType_WorkingThread3,
+		ThreadType_MaxThread = 12,
+	};
+
 
 	struct Job;
 	class Context;
@@ -54,7 +65,7 @@ namespace JobSystem
 		JobFunction function;
 		struct Job *parent;
 		void *data;
-		LONG unfinishedJobs;
+		volatile LONG unfinishedJobs;
 		char padding[kCdsJobPaddingBytes];
 	} Job;
 
@@ -88,7 +99,7 @@ namespace JobSystem
 		std::shared_ptr<OnFinishEventWrapperBase> _OnFinishEventWrapperBase;
 	};
 	extern JOB_SYSTEM_THREADLOCAL std::list<JobEventTrigger> tls_jobEventTriggers;
-
+	extern LONG GJobCount;
 
 	class WorkStealingQueue {
 	public:
@@ -126,7 +137,7 @@ namespace JobSystem
 	};
 
 	// Called by main thread to create the shared job context for a pool of worker threads.
-	Context *Init(int numWorkers, int numWorkersToSpawn, int maxJobsPerWorker);
+	Context *Init(int maxJobsPerWorker);
 
 	void UnInit();
 
@@ -134,7 +145,7 @@ namespace JobSystem
 
 
 	// Called by each worker thread.
-	int initWorker(Context *ctx);
+	int initWorker(ThreadId InThreadType,Context *ctx);
 
 
 	static Job *AllocateJob();
@@ -169,7 +180,18 @@ namespace JobSystem
 	// Return the worker ID of the calling thread. If initWorker()
 	// was called by this thread, the worker ID will be an index
 	// from [0..numWorkers-1]. Otherwise, the worker ID is undefined.
-	int workerId(void);
+
+	ThreadId workerId(void);
+// 
+// 	inline LONG GetJobCount()
+// 	{
+// #if 0
+// 		char szBuff[512];
+// 		sprintf_s(szBuff, 512, "GJobCount : %d\r\n", GJobCount);
+// 		OutputDebugStringA(szBuff);
+// #endif
+// 		return GJobCount;
+// 	}
 
 	bool IsJobComplete(const Job *job);
 

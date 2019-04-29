@@ -20,9 +20,15 @@ static_assert((sizeof(struct JobSystem::Job) % kCdsJobCacheLineBytes) == 0, "Job
 
 static JOB_SYSTEM_THREADLOCAL JobSystem::Context *tls_jobContext = nullptr;
 static JOB_SYSTEM_THREADLOCAL uint64_t tls_jobCount = 0;
-static JOB_SYSTEM_THREADLOCAL int tls_workerId = -1;
+static JOB_SYSTEM_THREADLOCAL JobSystem::ThreadId tls_workerId;
 static JOB_SYSTEM_THREADLOCAL JobSystem::Job *tls_jobPool = nullptr;
 JOB_SYSTEM_THREADLOCAL std::list<JobSystem::JobEventTrigger> JobSystem::tls_jobEventTriggers;
+
+static LONG JobSystem::GJobCount = 0;
+static HANDLE GHNewJob = NULL;
+static JobSystem::Context* GJobContext = nullptr;
+
+
 
 static inline uint32_t nextPowerOfTwo(uint32_t x)
 {
@@ -42,13 +48,7 @@ static inline JobSystem::Job *AllocateJob() {
 }
 
 static void FinishJob(JobSystem::Job *job) {
-	LONG unfinishedJobs;
-	do
-	{
-		unfinishedJobs = job->unfinishedJobs;
-	} while (InterlockedCompareExchange(&job->unfinishedJobs, unfinishedJobs - 1, unfinishedJobs) != unfinishedJobs);
-
-	--unfinishedJobs;
+	LONG unfinishedJobs = InterlockedDecrement(&job->unfinishedJobs);
 
 	assert(unfinishedJobs >= 0);
 	if (unfinishedJobs == 0 && job->parent) {
@@ -101,25 +101,31 @@ JobSystem::Job * GetJob(void)
 	JobSystem::Job *job = myQueue->Pop();
 	if (!job) {
 		// this worker's queue is empty; try to steal a job from another thread
-		int victimOffset = 1 + (rand() % tls_jobContext->m_numWorkerThreads - 1);
-		int victimIndex = (tls_workerId + victimOffset) % tls_jobContext->m_numWorkerThreads;
-		JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[victimIndex];
-		job = victimQueue->Steal();
-		if (!job) { // nothing to steal
-			JOB_YIELD(); // TODO(cort): busy-wait bad, right? But there might be a job to steal in ANOTHER queue, so we should try again shortly.
-			return nullptr;
+		//int victimOffset = 1 + (rand() % tls_jobContext->m_numWorkerThreads - 1);
+		//int victimIndex = (tls_workerId + victimOffset) % tls_jobContext->m_numWorkerThreads;
+		if (tls_workerId != JobSystem::ThreadType_MainThread)
+		{
+			JobSystem::WorkStealingQueue *victimQueue = tls_jobContext->m_workerJobQueues[JobSystem::ThreadType_MainThread/*victimIndex*/];
+			job = victimQueue->Steal();
+			if (!job) { // nothing to steal
+				JOB_YIELD(); // TODO(cort): busy-wait bad, right? But there might be a job to steal in ANOTHER queue, so we should try again shortly.
+				return nullptr;
+			}
 		}
 	}
 	return job;
 }
 
-int JobSystem::workerId(void)
+JobSystem::ThreadId JobSystem::workerId(void)
 {
 	return tls_workerId;
 }
 
 bool JobSystem::IsJobComplete(const Job *job)
 {
+	//InterlockedCompareExchange(&job->unfinishedJobs, 0, 0);
+	//auto unfinishedJobs = InterlockedCompareExchange(&job->unfinishedJobs, 0, 0);
+	//auto unfinishedJobs = InterlockedCompareExchange(&job->unfinishedJobs,0,0);
 	return (job->unfinishedJobs == 0);
 }
 
@@ -131,9 +137,9 @@ static void ExecuteJob(JobSystem::Job *job)
 	FinishJob(job);
 }
 
-static void WorkingThreadProc(JobSystem::Context *jobCtx)
+static void WorkingThreadProc(JobSystem::ThreadId InThreadType)
 {
-	int workerId = JobSystem::initWorker(jobCtx);
+	int workerId = JobSystem::initWorker(InThreadType,GJobContext);
 	while (true)
 	{
 		if (auto pJob = GetJob())
@@ -142,25 +148,31 @@ static void WorkingThreadProc(JobSystem::Context *jobCtx)
 		}
 		else
 		{
+// 			if (JobSystem::GJobCount == 0)
+// 			{
+// 				::WaitForSingleObject(GHNewJob, INFINITE);
+// 			}
 			::Sleep(1);
 		}
 	}
 }
 
 std::vector<HANDLE> workers;
-JobSystem::Context* GJobContext = nullptr;
-JobSystem::Context * JobSystem::Init(int numWorkers, int numWorkersToSpawn, int maxJobsPerWorker)
+
+JobSystem::Context * JobSystem::Init(int maxJobsPerWorker)
 {
 	assert(!GJobContext);
-	GJobContext = new Context(numWorkers, maxJobsPerWorker);
+	GJobContext = new Context(ThreadType_MaxThread, maxJobsPerWorker);
 
-	for (int iThread = 0; iThread < numWorkersToSpawn; iThread += 1) {
+	for (int iThread = ThreadType_WorkingThread1; iThread < ThreadType_MaxThread; iThread += 1) {
 		DWORD ThreadID;
-		auto hThreadHandle = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WorkingThreadProc, (LPVOID)GJobContext, 0, &ThreadID);
+		auto hThreadHandle = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WorkingThreadProc, (LPVOID)iThread, 0, &ThreadID);
 		workers.push_back(hThreadHandle);
 	}
 
-	initWorker(GJobContext);
+	initWorker(ThreadType_MainThread,GJobContext);
+
+	//GHNewJob = ::CreateEvent(NULL, TRUE, FALSE, TEXT("NewJobs"));
 
 	return GJobContext;
 }
@@ -206,11 +218,11 @@ void JobSystem::Update()
 // 	}
 }
 
-int JobSystem::initWorker(Context *ctx)
+int JobSystem::initWorker(ThreadId InThreadType,Context *ctx)
 {
 	tls_jobContext = ctx;
 	tls_jobCount = 0;
-	tls_workerId = ctx->m_nextWorkerId++;
+	tls_workerId = InThreadType;
 	assert(tls_workerId < ctx->m_numWorkerThreads);
 	void *jobPoolBufferAligned = (void*)((uintptr_t(ctx->m_jobPoolBuffer) + kCdsJobCacheLineBytes - 1) & ~(kCdsJobCacheLineBytes - 1));
 	assert((uintptr_t(jobPoolBufferAligned) % kCdsJobCacheLineBytes) == 0);
@@ -253,6 +265,19 @@ JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const v
 int JobSystem::enqueueJob(JobSystem::Job *job)
 {
 	int pushError = tls_jobContext->m_workerJobQueues[tls_workerId]->Push(job);
+
+// 	{
+// 		LONG jobCount;
+// 		do
+// 		{
+// 			jobCount = GJobCount;
+// 		} while (InterlockedIncrement(&GJobCount) != jobCount + 1);
+// 
+// 		if (jobCount == 0)
+// 		{
+// 			::SetEvent(GHNewJob);
+// 		}
+// 	}
 	return pushError;
 }
 
@@ -367,9 +392,11 @@ JobSystem::Job * JobSystem::WorkStealingQueue::Steal()
 			}
 			m_entries[top & (m_capacity - 1)] = nullptr;
 
+#if 0
 			char szBuff[512];
 			sprintf_s(szBuff, 512, "WorkStealingQueue::Steal ByWorkId : %d\r\n", JobSystem::workerId());
 			OutputDebugStringA(szBuff);
+#endif
 			return job;
 		}
 	}

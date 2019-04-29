@@ -16,7 +16,7 @@ MainFrame::~MainFrame()
 
 }
 
-std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, int InPosX, int InPosY, int InSizeX, int InSizeY, int InCanvasSizeX, int InCanvasSizeY)
+std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, class UIRectBatchRender* InUIRender, int InPosX, int InPosY, int InSizeX, int InSizeY, int InCanvasSizeX, int InCanvasSizeY)
 {
 	std::shared_ptr<WidgetBase> WidgetCreated;
 	if (InWidgetType == EWidgetType_Panel)
@@ -28,7 +28,7 @@ std::shared_ptr<WidgetBase> MainFrame::CreateWidget(EWidgetType InWidgetType, in
 		WidgetCreated = std::make_shared<WidgetControlButton>(InPosX, InPosY, InSizeX, InSizeY, InCanvasSizeX, InCanvasSizeY);
 	}
 
-	WidgetCreated->Init();
+	WidgetCreated->Init(InUIRender);
 
 	return WidgetCreated;
 }

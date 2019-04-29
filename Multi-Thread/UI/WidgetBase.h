@@ -20,13 +20,13 @@ public:
 	virtual bool IsVisible() const final { return _Visible; };
 	virtual void SetVisible(bool InVisible) { _Visible = InVisible; };
 
-	bool Init();
+	bool Init(class UIRectBatchRender* InUIRender);
 
 	bool IsPenddingDestroy() const { return _IsPenddingDestroy; }
 	void SetPenddingDestroy(bool bInPendingDestroy) { _IsPenddingDestroy = bInPendingDestroy; }
 
 private:
-	virtual bool OnInit() { return true; }
+	virtual bool OnInit(class UIRectBatchRender* InUIRender) { return true; }
 
 protected:
 	virtual void OnRender(class UIRectBatchRender* InUIRender) {}

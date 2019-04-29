@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>41</LINE>
+      <COLUMN>65</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>AllocateJob</FUNCTION>
+    <DECORATED>?AllocateJob@@YAPAUJob@JobSystem@@XZ</DECORATED>
+    <FUNCLINE>38</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>225</LINE>
+      <COLUMN>65</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>JobSystem::AllocateJob</FUNCTION>
+    <DECORATED>?AllocateJob@JobSystem@@YAPAUJob@1@XZ</DECORATED>
+    <FUNCLINE>221</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>302</LINE>
+      <COLUMN>34</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>JobSystem::WorkStealingQueue::Push</FUNCTION>
+    <DECORATED>?Push@WorkStealingQueue@JobSystem@@QAEHPAUJob@2@@Z</DECORATED>
+    <FUNCLINE>298</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>325</LINE>
+      <COLUMN>44</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>JobSystem::WorkStealingQueue::Pop</FUNCTION>
+    <DECORATED>?Pop@WorkStealingQueue@JobSystem@@QAEPAUJob@2@XZ</DECORATED>
+    <FUNCLINE>312</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>360</LINE>
+      <COLUMN>41</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>JobSystem::WorkStealingQueue::Steal</FUNCTION>
+    <DECORATED>?Steal@WorkStealingQueue@JobSystem@@QAEPAUJob@2@XZ</DECORATED>
+    <FUNCLINE>349</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.cpp</FILENAME>
+      <LINE>368</LINE>
+      <COLUMN>31</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>JobSystem::WorkStealingQueue::Steal</FUNCTION>
+    <DECORATED>?Steal@WorkStealingQueue@JobSystem@@QAEPAUJob@2@XZ</DECORATED>
+    <FUNCLINE>349</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+</DEFECTS>

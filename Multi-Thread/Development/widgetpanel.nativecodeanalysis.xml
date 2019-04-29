@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.h</FILENAME>
+      <LINE>89</LINE>
+      <COLUMN>1</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'JobSystem::JobEventTrigger::job' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>JobSystem::JobEventTrigger::{ctor}</FUNCTION>
+    <DECORATED>??0JobEventTrigger@JobSystem@@QAE@XZ</DECORATED>
+    <FUNCLINE>89</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\multi-thread\multi-thread\multi-thread\</FILEPATH>
+      <FILENAME>jobsystem.h</FILENAME>
+      <LINE>89</LINE>
+      <COLUMN>1</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'JobSystem::JobEventTrigger::job' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>JobSystem::JobEventTrigger::{ctor}</FUNCTION>
+    <DECORATED>??0JobEventTrigger@JobSystem@@QAE@ABU01@@Z</DECORATED>
+    <FUNCLINE>89</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+</DEFECTS>

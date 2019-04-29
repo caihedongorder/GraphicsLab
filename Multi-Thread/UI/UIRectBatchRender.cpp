@@ -7,21 +7,44 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "UISystem.h"
 #include "../MathUtil.h"
+#include <memory>
 
 extern std::shared_ptr<GraphSystem> GGraphSystem;
 
-UIRectBatchRender::RectRenderElementInGPU::RectRenderElementInGPU()
+UIRectBatchRender::RectRenderEffectInfo::RectRenderEffectInfo(ID3DX11EffectPass* InPass, int InIndex) :Pass(InPass)
+, index(InIndex)
+, RenderElementMemoryPool(10000)
+, VertexCount(0)
+, mVB(nullptr)
+, mInputLayout(nullptr)
 {
+	// Create the vertex input layout.
+	const D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
+	{
+		{"CLIP", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"CW", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"LA", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"ROTATE", 0, DXGI_FORMAT_R32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
 
+	// Create the input layout
+	D3DX11_PASS_DESC passDesc;
+	InPass->GetDesc(&passDesc);
+	HR(GGraphSystem->GetD3dDevice()->CreateInputLayout(vertexDesc, sizeof(vertexDesc) / sizeof(vertexDesc[0]), passDesc.pIAInputSignature,
+		passDesc.IAInputSignatureSize, &mInputLayout));
 }
 
-UIRectBatchRender::RectRenderElementInGPU::~RectRenderElementInGPU()
+
+
+UIRectBatchRender::RectRenderEffectInfo::~RectRenderEffectInfo()
 {
 	ReleaseCOM(mVB);
 	ReleaseCOM(mInputLayout);
 }
 
 UIRectBatchRender::UIRectBatchRender()
+	:_RenderEffectIdxMemoryPool(10000)
 {
 
 }
@@ -55,181 +78,104 @@ void UIRectBatchRender::CreateInputLayout(ID3D11Device* Ind3dDevice, ID3DX11Effe
 void UIRectBatchRender::OnRender()
 {
 	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
-	for (auto EffectItInGPU = AllBatchElementsInGPU.begin(); EffectItInGPU != AllBatchElementsInGPU.end();++EffectItInGPU)
+	//渲染
+	for (auto EffectIt = _EffectInfos.begin(); EffectIt != _EffectInfos.end(); ++EffectIt)
 	{
-		const TechName2PassRenderCollectionsInGPU& tech2PassRenderCollectionsInGPU = EffectItInGPU->second;
-		for (auto TechItInGPU = tech2PassRenderCollectionsInGPU.begin(); TechItInGPU != tech2PassRenderCollectionsInGPU.end(); ++TechItInGPU)
-		{
-			auto pEffectTech = EffectItInGPU->first->GetTechniqueByName(TechItInGPU->first.c_str());
-			const PassName2RenderElementsInGPU& passName2ElementInGPU = TechItInGPU->second;
-			for (auto PassItInGPU = passName2ElementInGPU.begin(); PassItInGPU != passName2ElementInGPU.end(); ++PassItInGPU)
-			{
-				if (auto pBasePass = pEffectTech->GetPassByName(PassItInGPU->first.c_str()))
-				{
-					D3dDeviceContext->IASetInputLayout(PassItInGPU->second.mInputLayout);
-					D3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-					UINT stride = sizeof(FVectex);
-					UINT offset = 0;
-					D3dDeviceContext->IASetVertexBuffers(0, 1, &PassItInGPU->second.mVB, &stride, &offset);
+		const RectRenderEffectInfo* pEffectInfo = (*EffectIt).get();
 
-					pBasePass->Apply(0, D3dDeviceContext);
+		D3dDeviceContext->IASetInputLayout(pEffectInfo->mInputLayout);
+		D3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		UINT stride = sizeof(FVectex);
+		UINT offset = 0;
+		D3dDeviceContext->IASetVertexBuffers(0, 1, &pEffectInfo->mVB, &stride, &offset);
 
-					D3dDeviceContext->Draw(PassItInGPU->second.VectexCount, 0);
-				}
-			}
-		}
+		pEffectInfo->Pass->Apply(0, D3dDeviceContext);
+
+		D3dDeviceContext->Draw(pEffectInfo->VertexCount, 0);
 	}
-
 }
 
-void UIRectBatchRender::DrawInCPU(ID3DX11Effect* InEffect, const std::string& InTechName, const std::string& InPassName, const RectRenderElementInCPU& InElement)
+void UIRectBatchRender::DrawInCPU(int InEffectIdx,const RectRenderElementInCPU& InElement)
 {
-	ScopeCriticalSection Scope(CriticalSection);
-	auto EffectIt = AllBatchElementsInCPU.find(InEffect);
-	if (EffectIt == AllBatchElementsInCPU.end())
-	{
-		EffectIt = AllBatchElementsInCPU.insert(std::make_pair(InEffect, TechName2PassRenderCollectionsInCPU()));
-	}
-
-	TechName2PassRenderCollectionsInCPU& tech2PassRenderCollections = EffectIt->second;
-	auto TechIt = tech2PassRenderCollections.find(InTechName);
-	if (TechIt == tech2PassRenderCollections.end())
-	{
-		TechIt = tech2PassRenderCollections.insert(std::make_pair(InTechName, PassName2RenderElementsInCPU()));
-	}
-
-	PassName2RenderElementsInCPU& passName2Element = TechIt->second;
-	auto PassIt = passName2Element.find(InPassName);
-	if (PassIt == passName2Element.end())
-	{
-		PassIt = passName2Element.insert(std::make_pair(InPassName, std::vector<RectRenderElementInCPU>()));
-	}
-
-	PassIt->second.push_back(InElement);
-
+	new(_RenderEffectIdxMemoryPool.Alloc(1))int(InEffectIdx);
+	new(_EffectInfos[InEffectIdx]->RenderElementMemoryPool.Alloc(1))RectRenderElementInCPU(InElement);
 }
 
 void UIRectBatchRender::PostRender()
 {
-
-	//清除 cpu上不存在的 但是存在于gpu上的元素
-
-	for (auto EffectItInGPU = AllBatchElementsInGPU.begin(); EffectItInGPU != AllBatchElementsInGPU.end();)
-	{
-		auto EffectItInCPU = AllBatchElementsInCPU.find(EffectItInGPU->first);
-		if (EffectItInCPU != AllBatchElementsInCPU.end())
-		{
-			TechName2PassRenderCollectionsInGPU& tech2PassRenderCollectionsInGPU = EffectItInGPU->second;
-			for (auto TechItInGPU = tech2PassRenderCollectionsInGPU.begin(); TechItInGPU != tech2PassRenderCollectionsInGPU.end();)
-			{
-				const TechName2PassRenderCollectionsInCPU& tech2PassRenderCollectionsInCPU = EffectItInCPU->second;
-				auto TechItInCPU = tech2PassRenderCollectionsInCPU.find(TechItInGPU->first);
-				if (TechItInCPU != tech2PassRenderCollectionsInCPU.end())
-				{
-					++TechItInGPU;
-				}
-				else
-				{
-					tech2PassRenderCollectionsInGPU.erase(TechItInGPU->first);
-					TechItInGPU++;
-				}
-			}
-
-			++EffectItInGPU;
-		}
-		else
-		{
-			AllBatchElementsInGPU.erase(EffectItInGPU->first);
-			EffectItInGPU++;
-		}
-	}
-
 	auto D3dDeviceContext = GGraphSystem->GetD3dDeviceContext();
 
 	//cpu数据 同步到 gpu 
-	for (auto EffectItInCPU = AllBatchElementsInCPU.begin() ; EffectItInCPU != AllBatchElementsInCPU.end() ; ++EffectItInCPU)
+	for (auto EffectIt = _EffectInfos.begin() ; EffectIt != _EffectInfos.end() ; ++EffectIt)
 	{
-		const TechName2PassRenderCollectionsInCPU& tech2PassRenderCollectionsInCPU = EffectItInCPU->second;
-
-		auto EffectItInGPU = AllBatchElementsInGPU.find(EffectItInCPU->first);
-		if (EffectItInGPU == AllBatchElementsInGPU.end())
+		RectRenderEffectInfo* pEffectInfo = (*EffectIt).get();
+		int ElementCount = pEffectInfo->RenderElementMemoryPool.ElementCount();
+		int VertexCount = ElementCount * 6;
+		if (pEffectInfo->VertexCount < VertexCount)
 		{
-			EffectItInGPU = AllBatchElementsInGPU.insert(std::make_pair(EffectItInCPU->first, TechName2PassRenderCollectionsInGPU()));
+			ReleaseCOM(pEffectInfo->mVB);
+
+			D3D11_BUFFER_DESC vbd;
+			vbd.Usage = D3D11_USAGE_DYNAMIC;
+			vbd.ByteWidth = sizeof(FVectex) * VertexCount;
+			vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			vbd.MiscFlags = 0;
+			vbd.StructureByteStride = 0;
+			D3D11_SUBRESOURCE_DATA vinitData;
+			vinitData.pSysMem = pEffectInfo->RenderElementMemoryPool.GetBasePtr();
+			HR(GGraphSystem->GetD3dDevice()->CreateBuffer(&vbd, &vinitData, &pEffectInfo->mVB));
+
+			pEffectInfo->VertexCount = VertexCount;
 		}
-		TechName2PassRenderCollectionsInGPU& tech2PassRenderCollectionsInGPU = EffectItInGPU->second;
-
-		for (auto TechItInCPU = tech2PassRenderCollectionsInCPU.begin(); TechItInCPU != tech2PassRenderCollectionsInCPU.end(); ++TechItInCPU)
+		else
 		{
-			auto TechItInGPU = tech2PassRenderCollectionsInGPU.find(TechItInCPU->first);
-			if (TechItInGPU == tech2PassRenderCollectionsInGPU.end())
+			D3D11_MAPPED_SUBRESOURCE mappedResource;
+			auto result = D3dDeviceContext->Map(pEffectInfo->mVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			if (SUCCEEDED(result))
 			{
-				TechItInGPU = tech2PassRenderCollectionsInGPU.insert(std::make_pair(TechItInCPU->first, PassName2RenderElementsInGPU()));
-			}
-			PassName2RenderElementsInGPU& passName2ElementInGPU = TechItInGPU->second;
+				// Get a pointer to the data in the constant buffer.
+				auto dataPtr = (PerFrameData *)mappedResource.pData;
 
+				memcpy(mappedResource.pData, pEffectInfo->RenderElementMemoryPool.GetBasePtr(), sizeof(FVectex) * VertexCount);
 
-			const PassName2RenderElementsInCPU& passName2ElementInCPU = TechItInCPU->second;
-	
-
-			for (auto PassItInCPU = passName2ElementInCPU.begin(); PassItInCPU != passName2ElementInCPU.end(); ++PassItInCPU)
-			{
-				auto PassItInGPU = passName2ElementInGPU.find(PassItInCPU->first);
-				if (PassItInGPU == passName2ElementInGPU.end())
-				{
-					PassItInGPU = passName2ElementInGPU.insert(std::make_pair(PassItInCPU->first, RectRenderElementInGPU()));
-					CreateInputLayout(GGraphSystem->GetD3dDevice(), EffectItInGPU->first, TechItInGPU->first, PassItInGPU->first, PassItInGPU->second.mInputLayout);
-				}
-				int ElementCount = PassItInCPU->second.size();
-				if (ElementCount > 0)
-				{
-					int VertexCount = ElementCount * 6;
-
-					RectRenderElementInGPU& ElementInGPU = PassItInGPU->second;
-					if (ElementInGPU.VectexCount < VertexCount)
-					{
-						ReleaseCOM(ElementInGPU.mVB);
-
-						D3D11_BUFFER_DESC vbd;
-						vbd.Usage = D3D11_USAGE_DYNAMIC;
-						vbd.ByteWidth = sizeof(FVectex) * VertexCount;
-						vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-						vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-						vbd.MiscFlags = 0;
-						vbd.StructureByteStride = 0;
-						D3D11_SUBRESOURCE_DATA vinitData;
-						vinitData.pSysMem = PassItInCPU->second.data();
-						HR(GGraphSystem->GetD3dDevice()->CreateBuffer(&vbd, &vinitData, &ElementInGPU.mVB));
-
-						ElementInGPU.VectexCount = VertexCount;
-					}
-					else
-					{
-						D3D11_MAPPED_SUBRESOURCE mappedResource;
-						auto result = D3dDeviceContext->Map(ElementInGPU.mVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-						if (SUCCEEDED(result))
-						{
-
-							// Get a pointer to the data in the constant buffer.
-							auto dataPtr = (PerFrameData *)mappedResource.pData;
-
-							memcpy(mappedResource.pData, PassItInCPU->second.data(), sizeof(FVectex) * VertexCount);
-
-							D3dDeviceContext->Unmap(ElementInGPU.mVB, 0);
-						}
-					}
-				}
+				D3dDeviceContext->Unmap(pEffectInfo->mVB, 0);
 			}
 		}
 	}
 }
 
-void UIRectBatchRender::BeginDraw()
+void UIRectBatchRender::BeginFrame()
 {
-	AllBatchElementsInCPU.clear();
+	_RenderEffectIdxMemoryPool.BeginFrame();
+	for (auto it = _EffectInfos.begin(); it != _EffectInfos.end(); ++it)
+	{
+		(*it)->RenderElementMemoryPool.BeginFrame();
+	}
 }
 
-void UIRectBatchRender::EndDraw()
+void UIRectBatchRender::EndFrame()
 {
+	_RenderEffectIdxMemoryPool.EndFrame();
 
+	for (auto it = _EffectInfos.begin(); it != _EffectInfos.end(); ++it)
+	{
+		(*it)->RenderElementMemoryPool.EndFrame();
+	}
+}
+
+void UIRectBatchRender::RegisterEffect(ID3DX11EffectPass* InPass, int& OutEffectIndex)
+{
+	for (auto it = _EffectInfos.begin() ; it != _EffectInfos.end() ; ++it)
+	{
+		if (InPass == (*it)->Pass)
+		{
+			OutEffectIndex = (*it)->index;
+			return;
+		}
+	}
+	OutEffectIndex = _EffectInfos.size();
+
+	_EffectInfos.push_back(std::make_shared<RectRenderEffectInfo>(InPass, OutEffectIndex));
 }
 
