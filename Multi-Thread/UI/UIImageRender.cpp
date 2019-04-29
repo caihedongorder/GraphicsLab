@@ -46,17 +46,17 @@ void UIImageRender::PostRender(const UITransform& InTransform)
 	_Transform = InTransform;
 }
 
+const glm::vec2 UVs[] = {
+		{	glm::vec2(0.0,0.0f)	},
+		{	glm::vec2(0.0,1.0f)	},
+		{	glm::vec2(1.0,0.0f)	},
+		{	glm::vec2(1.0,0.0f)	},
+		{	glm::vec2(1.0,1.0f)	},
+		{	glm::vec2(0.0,1.0f)	},
+};
 void UIImageRender::GetVertexData(UIRectBatchRender::FVectex* OutVertexData)
 {
-	const glm::vec2 UVs[] = {
-	{	glm::vec2(0.0,0.0f)	},
-	{	glm::vec2(0.0,1.0f)	},
-	{	glm::vec2(1.0,0.0f)	},
-	{	glm::vec2(1.0,0.0f)	},
-	{	glm::vec2(1.0,1.0f)	},
-	{	glm::vec2(0.0,1.0f)	},
-	};
-
+	
 	glm::vec4 ParentClipRect = { 0,0,800,600 };
 	glm::vec4 ClipRect = { _Transform.translate - _Anchor * _ClipSize,_Transform.translate + _ClipSize * (glm::vec2(1.0f,1.0f) - _Anchor) };
 

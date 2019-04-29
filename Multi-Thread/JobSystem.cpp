@@ -50,6 +50,8 @@ static inline JobSystem::Job *AllocateJob() {
 static void FinishJob(JobSystem::Job *job) {
 	LONG unfinishedJobs = InterlockedDecrement(&job->unfinishedJobs);
 
+	InterlockedDecrement(&JobSystem::GJobCount);
+
 	assert(unfinishedJobs >= 0);
 	if (unfinishedJobs == 0 && job->parent) {
 		FinishJob(job->parent);
@@ -148,11 +150,14 @@ static void WorkingThreadProc(JobSystem::ThreadId InThreadType)
 		}
 		else
 		{
-// 			if (JobSystem::GJobCount == 0)
-// 			{
-// 				::WaitForSingleObject(GHNewJob, INFINITE);
-// 			}
-			::Sleep(1);
+			if (JobSystem::GJobCount == 0)
+			{
+				::WaitForSingleObject(GHNewJob, INFINITE);
+			}
+			else
+			{
+				::Sleep(1);
+			}
 		}
 	}
 }
@@ -172,7 +177,7 @@ JobSystem::Context * JobSystem::Init(int maxJobsPerWorker)
 
 	initWorker(ThreadType_MainThread,GJobContext);
 
-	//GHNewJob = ::CreateEvent(NULL, TRUE, FALSE, TEXT("NewJobs"));
+	GHNewJob = ::CreateEvent(NULL, TRUE, FALSE, TEXT("NewJobs"));
 
 	return GJobContext;
 }
@@ -205,6 +210,13 @@ void JobSystem::Update()
 			++It;
 		}
 	}
+
+	if (JobSystem::GJobCount == 0)
+	{
+		::ResetEvent(GHNewJob);
+	}
+
+
 
 // 	std::list< JobEventTrigger>::iterator itList;
 // 	for (itList = tls_jobEventTriggers.begin(); itList != tls_jobEventTriggers.end(); )
@@ -266,18 +278,15 @@ int JobSystem::enqueueJob(JobSystem::Job *job)
 {
 	int pushError = tls_jobContext->m_workerJobQueues[tls_workerId]->Push(job);
 
-// 	{
-// 		LONG jobCount;
-// 		do
-// 		{
-// 			jobCount = GJobCount;
-// 		} while (InterlockedIncrement(&GJobCount) != jobCount + 1);
-// 
-// 		if (jobCount == 0)
-// 		{
-// 			::SetEvent(GHNewJob);
-// 		}
-// 	}
+	{
+		LONG jobCount = GJobCount;
+		InterlockedIncrement(&GJobCount);
+
+		if (jobCount == 0)
+		{
+			::SetEvent(GHNewJob);
+		}
+	}
 	return pushError;
 }
 

@@ -51,7 +51,7 @@ void WidgetPanel::OnPostRender()
 				pWidgetBase[i]->OnPostRender();
 			}
 		}, SpliteNums, nullptr, [](void* pWidgetBase) {});
-		JobSystem::waitForJob(pJob);
+		//JobSystem::waitForJob(pJob);
 	}
 	else
 	{

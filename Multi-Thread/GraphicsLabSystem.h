@@ -6,6 +6,7 @@
 #include "World.h"
 #include "GameTimer.h"
 #include "UI/UISystem.h"
+#include "JobSystem.h"
 
 class GraphicsLabSystem
 {
@@ -26,6 +27,8 @@ public:
 	GraphSystem* GetGraphSystem() { return _GraphSystem.get(); }
 	UISystem* GetUISystem() { return _UISystem.get(); }
 
+	JobSystem::Job* GetFrameJob() { return _FrameUpdateJob; }
+
 private:
 	static GraphicsLabSystem sInst;
 
@@ -34,5 +37,7 @@ private:
 	std::shared_ptr<World> _World;
 	std::shared_ptr<GameTimer> _GameTimer;
 	std::shared_ptr<UISystem> _UISystem;
+
+	JobSystem::Job* _FrameUpdateJob;
 };
 
