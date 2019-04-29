@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "UISystem.h"
 #include "../MathUtil.h"
+#include "../GraphicsLabSystem.h"
 
 extern std::shared_ptr<GraphSystem> GGraphSystem;
 
@@ -31,9 +32,6 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, con
 	const UITransform& InTransform,
 	const glm::vec2& InSize, const glm::vec2& InClipSize, const glm::vec2& InAnchor, const glm::vec2& InCanvasSize)
 {
-	int FrameSizeX = UISystem::GetInstance()->GetMainFrame()->GetSizeX();
-	int FrameSizeY = UISystem::GetInstance()->GetMainFrame()->GetSizeY();
-
 	Effect = InEffect;
 	_EffectTechName = InEffectTechName;
 	_EffectPassName = InEffectPassName;
@@ -47,7 +45,7 @@ void UIImageRender::Init(ID3D11Device* Ind3dDevice, ID3DX11Effect* InEffect, con
 void UIImageRender::OnRender(int InEffectIdx)
 {
 	GetVertexData(Element.VertexData);
-	UISystem::GetInstance()->GetUIRectBatchRender()->DrawInCPU(InEffectIdx,Element);
+	GraphicsLabSystem::GetInstance()->GetUISystem()->GetUIRectBatchRender()->DrawInCPU(InEffectIdx,Element);
 }
 
 void UIImageRender::SetSRV(LPCSTR strVarName, ID3D11ShaderResourceView* InSRV)

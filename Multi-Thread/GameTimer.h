@@ -11,7 +11,6 @@ public:
 
 	float GetDletaTime() const { return DeltaTime; }
 
-	static GameTimer* GetInstance();
 private:
 	float DeltaTime;
 

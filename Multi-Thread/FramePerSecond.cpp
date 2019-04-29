@@ -3,6 +3,8 @@
 
 
 FramePerSecond::FramePerSecond()
+	:FrameNums(0)
+	, FPS(0)
 {
 }
 

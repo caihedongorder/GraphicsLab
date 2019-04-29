@@ -18,7 +18,7 @@ bool WidgetControlButton::OnInit()
 	auto pEffect = ShaderManager::GetInstance()->GetShader(d3dDevice, TEXT("FX/UIImage.fx"));
 	auto pTech = pEffect->GetTechniqueByName("BaseTech");
 	auto pass = pTech->GetPassByName("UI");
-	UISystem::GetInstance()->GetUIRectBatchRender()->RegisterEffect(pass, EffectIdx);
+	GraphicsLabSystem::GetInstance()->GetUISystem()->GetUIRectBatchRender()->RegisterEffect(pass, EffectIdx);
 
 	return EffectIdx != -1;
 }

@@ -14,8 +14,6 @@ public:
 	bool Init();
 	virtual IUIMainFrame* GetMainFrame() override;
 
-	static UISystem* GetInstance();
-
 	void OnRender();
 	void OnUpdate(float InDeltaTime);
 	void OnPostRender();
@@ -28,6 +26,4 @@ public:
 private:
 	std::shared_ptr<MainFrame> _MainFrame;
 	std::shared_ptr<UIRectBatchRender> _UIRectBatchRender;
-
-	static UISystem _sInst;
 };

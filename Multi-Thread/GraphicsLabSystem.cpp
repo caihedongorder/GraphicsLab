@@ -29,25 +29,26 @@ bool GraphicsLabSystem::Init(HWND hWnd)
 
 	JobSystem::Init(4096);
 
-	GWorld = std::make_shared<World>();
+	_World = std::make_shared<World>();
 
-	GGraphSystem = std::shared_ptr<GraphSystem>(new GraphSystem(GWorld.get()));
+	_GraphSystem = std::shared_ptr<GraphSystem>(new GraphSystem(_World.get()));
 
 
-	if (!GGraphSystem->InitDirect3D(hWnd, 800, 600))	return false;
+	if (!_GraphSystem->InitDirect3D(hWnd, 800, 600))	return false;
 
-	GWorld->Init(GGraphSystem->GetD3dDevice());
+	_World->Init(_GraphSystem->GetD3dDevice());
 
-	GWorld->CreateBox(GGraphSystem->GetD3dDevice(), {
+	_World->CreateBox(_GraphSystem->GetD3dDevice(), {
 		glm::vec3(0.0f),
 		glm::angleAxis(glm::radians(0.0f), glm::vec3(0.f, 1.f, 0.f)),
 		glm::vec3(1.0f) });
 
+	_GameTimer = std::make_shared<GameTimer>();
+	_GameTimer->Init();
+	_UISystem = std::make_shared<UISystem>();
+	_UISystem->Init();
 
-	GameTimer::GetInstance()->Init();
-	UISystem::GetInstance()->Init();
-
-	GFPS = std::make_shared<FramePerSecond>();
+	_FPS = std::make_shared<FramePerSecond>();
 
 	return true;
 }
@@ -59,26 +60,28 @@ void GraphicsLabSystem::UnInit()
 
 void GraphicsLabSystem::Update()
 {
-	GameTimer::GetInstance()->Update();
+	_GameTimer->Update();
 
-	UISystem::GetInstance()->BeginFrame();
+	_UISystem->BeginFrame();
 
 	//开始渲染上一帧数据
-	GGraphSystem->BeginRender();
+	_GraphSystem->BeginRender();
 
-	float DeltaTime = GameTimer::GetInstance()->GetDletaTime();
+	float DeltaTime = _GameTimer->GetDletaTime();
 
-	UISystem::GetInstance()->OnUpdate(DeltaTime);
+	_UISystem->OnUpdate(DeltaTime);
+
+	_FPS->Update(DeltaTime);
 
 	//更新当前帧逻辑数据
 	JobSystem::Update();
 
 	//等待渲染完成
-	GGraphSystem->WaitforFinishRender();
+	_GraphSystem->WaitforFinishRender();
 
-	UISystem::GetInstance()->OnPostRender();
+	_UISystem->OnPostRender();
 
-	UISystem::GetInstance()->EndFrame();
+	_UISystem->EndFrame();
 
 	Sleep(1);
 }

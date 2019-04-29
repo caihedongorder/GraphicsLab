@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "ShaderManager.h"
 #include "UI/UISystem.h"
+#include "GraphicsLabSystem.h"
 
 int (WINAPIV * __vsnwprintf)(wchar_t *, size_t, const wchar_t*, va_list) = _vsnwprintf;
 
@@ -369,7 +370,7 @@ void GraphSystem::OnRender()
 		OnForwardRender();
 	}
 
-	UISystem::GetInstance()->OnRender();
+	GraphicsLabSystem::GetInstance()->GetUISystem()->OnRender();
 
 
 	HR(mSwapChain->Present(0, 0));

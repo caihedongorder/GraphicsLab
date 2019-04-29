@@ -28,8 +28,3 @@ void GameTimer::Update()
 
 	CurrentTime = nowTime;
 }
-
-GameTimer* GameTimer::GetInstance()
-{
-	return &sInst;
-}

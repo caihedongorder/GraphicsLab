@@ -3,9 +3,6 @@
 #include "WidgetPanel.h"
 
 
-UISystem UISystem::_sInst;
-
-
 UISystem::UISystem()
 {
 
@@ -50,11 +47,6 @@ bool UISystem::Init()
 IUIMainFrame* UISystem::GetMainFrame()
 {
 	return _MainFrame.get();
-}
-
-UISystem* UISystem::GetInstance()
-{
-	return &_sInst;
 }
 
 void UISystem::OnRender()
