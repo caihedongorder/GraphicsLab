@@ -10,9 +10,9 @@ public:
 	{
 		_WarnNums = int(_MaxNums * fWarn);
 		_CoreNums = int(_MaxNums * fCore);
-		_data = new T[_MaxNums];
+		_data.resize(_MaxNums);
 
-		_BasePtr = _data;
+		_BasePtr = _data.data();
 		_EndPtr = _BasePtr + _MaxNums - 1;
 	}
 
@@ -27,12 +27,10 @@ public:
 			_CoreNums >>= 1;
 			_WarnNums >>= 1;
 
-			delete[] _data;
-
-			_data = new T[_MaxNums];
+			_data.resize(_MaxNums);
 		}
 		_FreePtrIndex = 0;
-		_BasePtr = _data;
+		_BasePtr = _data.data();
 		_EndPtr = _BasePtr + _MaxNums - 1;
 	}
 
@@ -64,7 +62,7 @@ public:
 		} while (InterlockedCompareExchange((LONG*)&_FreePtrIndex, newFreePtrIndex + iNum, newFreePtrIndex) != newFreePtrIndex);
 		//} while (InterlockedIncrement((LONG*)&_FreePtrIndex) == newFreePtrIndex + 1);
 
-		return _BasePtr + newFreePtrIndex + iNum;
+		return _BasePtr + newFreePtrIndex;
 	}
 
 
@@ -74,7 +72,7 @@ public:
 	}
 
 private:
-	T* _data;
+	std::vector<T> _data;
 	T* _BasePtr = nullptr;
 	T* _EndPtr = nullptr;
 	LONG _FreePtrIndex = 0;

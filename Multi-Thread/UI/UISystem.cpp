@@ -25,7 +25,7 @@ bool UISystem::Init()
 	int StartPosX = 20;
 	int StartPosY = 20;
 
-	int Step = 30;
+	int Step = 10;
 	int CurrentPosX = StartPosX;
 	int CurrentPosY = StartPosY;
 	while (CurrentPosY < 600)

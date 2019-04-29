@@ -1,6 +1,2 @@
-﻿  JobSystem.cpp
-  MainFrame.cpp
-  WidgetPanel.cpp
-  main.cpp
-  Generating Code...
+﻿  UISystem.cpp
   Multi-Thread.vcxproj -> D:\Multi-Thread\Multi-Thread\\Multi-Thread\GraphicsLab.exe
