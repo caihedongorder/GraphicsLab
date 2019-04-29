@@ -128,8 +128,9 @@ namespace JobSystem
 		Context(int numWorkerThreads, int maxJobsPerThread);
 		~Context();
 
+		void *m_jobPoolBuffer;
+
 		WorkStealingQueue **m_workerJobQueues[2];
-		void *m_jobPoolBuffer[2];
 		void *m_queueEntryBuffer[2];
 		std::atomic<int> m_nextWorkerId;
 		int m_numWorkerThreads;
@@ -148,7 +149,7 @@ namespace JobSystem
 	int initWorker(ThreadId InThreadType,Context *ctx);
 
 
-	static Job *AllocateJob();
+	static Job *AllocateJob(int iQueueIndex = 0);
 
 	// Called by worker threads to create a new job to execute. This function does *not* enqueue the new job for execution.
 	Job *createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes);
@@ -172,7 +173,7 @@ namespace JobSystem
 
 	// Called by worker threads to enqueue a job for execution. This gives the next available thread permission to execute this
 	// job. All prior dependencies must be complete before a job is enqueued.
-	int enqueueJob(Job *job, int iQueueIndex = 1);
+	int enqueueJob(Job *job, int iQueueIndex = 0);
 
 	// Fetch and run any available queued jobs until the specified job is complete.
 	void waitForJob(const Job *job);

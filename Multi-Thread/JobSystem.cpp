@@ -21,13 +21,12 @@ static_assert((sizeof(struct JobSystem::Job) % kCdsJobCacheLineBytes) == 0, "Job
 static JOB_SYSTEM_THREADLOCAL JobSystem::Context *tls_jobContext = nullptr;
 static JOB_SYSTEM_THREADLOCAL uint64_t tls_jobCount = 0;
 static JOB_SYSTEM_THREADLOCAL JobSystem::ThreadId tls_workerId;
-static JOB_SYSTEM_THREADLOCAL JobSystem::Job *tls_jobPool = nullptr;
+static JOB_SYSTEM_THREADLOCAL JobSystem::Job *tls_jobPool[2];
 JOB_SYSTEM_THREADLOCAL std::list<JobSystem::JobEventTrigger> JobSystem::tls_jobEventTriggers;
 
 static LONG JobSystem::GJobCount = 0;
-static HANDLE GHNewJob = NULL;
 static JobSystem::Context* GJobContext = nullptr;
-
+size_t jobPoolBufferSizePerQueue = 0;
 
 
 static inline uint32_t nextPowerOfTwo(uint32_t x)
@@ -39,12 +38,6 @@ static inline uint32_t nextPowerOfTwo(uint32_t x)
 	x = x | (x >> 8);
 	x = x | (x >> 16);
 	return x + 1;
-}
-
-static inline JobSystem::Job *AllocateJob() {
-	// TODO(cort): no protection against over-allocation
-	uint64_t index = tls_jobCount++;
-	return &tls_jobPool[index & (tls_jobContext->m_maxJobsPerThread - 1)];
 }
 
 static void FinishJob(JobSystem::Job *job) {
@@ -66,12 +59,14 @@ JobSystem::Context::Context(int numWorkerThreads, int maxJobsPerThread)
 {
 	maxJobsPerThread = nextPowerOfTwo(maxJobsPerThread);
 	m_maxJobsPerThread = maxJobsPerThread;
+	jobPoolBufferSizePerQueue = numWorkerThreads * maxJobsPerThread * sizeof(Job);
+	auto jobPoolBufferSize = jobPoolBufferSizePerQueue * 2 + kCdsJobCacheLineBytes - 1;
+
+	m_jobPoolBuffer = malloc(jobPoolBufferSize);
 
 	for (int iQueueIndex = 0 ; iQueueIndex < 2 ; ++iQueueIndex)
 	{
 		m_workerJobQueues[iQueueIndex] = new JobSystem::WorkStealingQueue*[numWorkerThreads];
-		const size_t jobPoolBufferSize = numWorkerThreads * maxJobsPerThread * sizeof(Job) + kCdsJobCacheLineBytes - 1;
-		m_jobPoolBuffer[iQueueIndex] = malloc(jobPoolBufferSize);
 		size_t queueBufferSize = JobSystem::WorkStealingQueue::BufferSize(maxJobsPerThread);
 		m_queueEntryBuffer[iQueueIndex] = malloc(queueBufferSize * numWorkerThreads);
 		for (int iWorker = 0; iWorker < numWorkerThreads; ++iWorker)
@@ -98,12 +93,12 @@ JobSystem::Context::~Context()
 		}
 		delete[] m_workerJobQueues[iQueueIndex];
 		free(m_queueEntryBuffer[iQueueIndex]);
-		free(m_jobPoolBuffer[iQueueIndex]);
+		free(m_jobPoolBuffer);
 	}
 }
 
 
-JobSystem::Job * GetJob(int InQueueIndex = 1)
+JobSystem::Job * GetJob(int InQueueIndex = 0)
 {
 	JobSystem::WorkStealingQueue *myQueue = tls_jobContext->m_workerJobQueues[InQueueIndex][tls_workerId];
 	JobSystem::Job *job = myQueue->Pop();
@@ -156,14 +151,7 @@ static void WorkingThreadProc(JobSystem::ThreadId InThreadType)
 		}
 		else
 		{
-			if (JobSystem::GJobCount == 0)
-			{
-				::WaitForSingleObject(GHNewJob, INFINITE);
-			}
-			else
-			{
-				::Sleep(1);
-			}
+			::Sleep(1);
 		}
 	}
 }
@@ -182,8 +170,6 @@ JobSystem::Context * JobSystem::Init(int maxJobsPerWorker)
 	}
 
 	initWorker(ThreadType_MainThread,GJobContext);
-
-	GHNewJob = ::CreateEvent(NULL, TRUE, FALSE, TEXT("NewJobs"));
 
 	return GJobContext;
 }
@@ -217,11 +203,6 @@ void JobSystem::Update()
 		}
 	}
 
-	if (JobSystem::GJobCount == 0)
-	{
-		::ResetEvent(GHNewJob);
-	}
-
 
 
 // 	std::list< JobEventTrigger>::iterator itList;
@@ -242,17 +223,18 @@ int JobSystem::initWorker(ThreadId InThreadType,Context *ctx)
 	tls_jobCount = 0;
 	tls_workerId = InThreadType;
 	assert(tls_workerId < ctx->m_numWorkerThreads);
-	void *jobPoolBufferAligned = (void*)((uintptr_t(ctx->m_jobPoolBuffer[0]) + kCdsJobCacheLineBytes - 1) & ~(kCdsJobCacheLineBytes - 1));
+	void *jobPoolBufferAligned = (void*)((uintptr_t(ctx->m_jobPoolBuffer) + kCdsJobCacheLineBytes - 1) & ~(kCdsJobCacheLineBytes - 1));
 	assert((uintptr_t(jobPoolBufferAligned) % kCdsJobCacheLineBytes) == 0);
-	tls_jobPool = (Job*)(jobPoolBufferAligned)+tls_workerId * ctx->m_maxJobsPerThread;
+	tls_jobPool[0] = (Job*)((unsigned char*)jobPoolBufferAligned + 0)+tls_workerId * ctx->m_maxJobsPerThread;
+	tls_jobPool[1] = (Job*)((unsigned char*)jobPoolBufferAligned + jobPoolBufferSizePerQueue)+tls_workerId * ctx->m_maxJobsPerThread;
 	return tls_workerId;
 }
 
-JobSystem::Job * JobSystem::AllocateJob()
+JobSystem::Job * JobSystem::AllocateJob(int iQueueIndex)
 {
 	// TODO(cort): no protection against over-allocation
 	uint64_t index = tls_jobCount++;
-	return &tls_jobPool[index & (tls_jobContext->m_maxJobsPerThread - 1)];
+	return &tls_jobPool[iQueueIndex][index & (tls_jobContext->m_maxJobsPerThread - 1)];
 }
 
 JobSystem::Job * JobSystem::createJob(JobFunction function, Job *parent, const void *embeddedData, size_t embeddedDataBytes)
@@ -287,11 +269,6 @@ int JobSystem::enqueueJob(JobSystem::Job *job,int iQueueIndex)
 	{
 		LONG jobCount = GJobCount;
 		InterlockedIncrement(&GJobCount);
-
-		if (jobCount == 0)
-		{
-			::SetEvent(GHNewJob);
-		}
 	}
 	return pushError;
 }
