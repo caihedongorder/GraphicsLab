@@ -128,9 +128,9 @@ namespace JobSystem
 		Context(int numWorkerThreads, int maxJobsPerThread);
 		~Context();
 
-		WorkStealingQueue **m_workerJobQueues;
-		void *m_jobPoolBuffer;
-		void *m_queueEntryBuffer;
+		WorkStealingQueue **m_workerJobQueues[2];
+		void *m_jobPoolBuffer[2];
+		void *m_queueEntryBuffer[2];
 		std::atomic<int> m_nextWorkerId;
 		int m_numWorkerThreads;
 		int m_maxJobsPerThread;
